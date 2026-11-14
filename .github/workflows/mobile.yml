@@ -71,7 +71,8 @@ jobs:
             exit 1
           fi
           mkdir -p sdwan-gui/src-tauri/gen/android/app
-          echo "${ANDROID_KEYSTORE_BASE64}" | base64 -d > sdwan-gui/src-tauri/gen/android/app/upload-keystore.jks
+          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 -d --ignore-garbage > sdwan-gui/src-tauri/gen/android/app/upload-keystore.jks
+          test -s sdwan-gui/src-tauri/gen/android/app/upload-keystore.jks
           printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=upload\nstoreFile=upload-keystore.jks\n' \
             "${ANDROID_KEYSTORE_PASSWORD}" "${ANDROID_KEYSTORE_PASSWORD}" \
             > sdwan-gui/src-tauri/gen/android/keystore.properties
