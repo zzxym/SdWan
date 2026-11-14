@@ -1,0 +1,57 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "core",
+			"path": "sdwan"
+		},
+		{
+			"name": "gui",
+			"path": "sdwan-gui"
+		},
+		{
+			"name": "web",
+			"path": "sdwan-web"
+		},
+		{
+			"name": "ffi",
+			"path": "sdwan-contrib/sdwan-ffi"
+		},
+		{
+			"name": "magisk",
+			"path": "sdwan-contrib/sdwan-magisk"
+		},
+		{
+			"name": "openharmony",
+			"path": "sdwan-contrib/sdwan-ohrs"
+		},
+		{
+			"name": "uptime",
+			"path": "sdwan-contrib/sdwan-uptime"
+		},
+		{
+			"name": "vpnservice",
+			"path": "tauri-plugin-vpnservice"
+		},
+		{
+			"name": "rpc-build",
+			"path": "sdwan-rpc-build"
+		}
+	],
+	"settings": {
+		"i18n-ally.sourceLanguage": "cn",
+		"i18n-ally.keystyle": "nested",
+		"i18n-ally.sortKeys": true,
+		// Disable the default formatter
+		"prettier.enable": false,
+		"editor.formatOnSave": true,
+		"editor.formatOnSaveMode": "modifications",
+		"editor.formatOnPaste": false,
+		"editor.formatOnType": true,
+		"[nix]": {
+			"editor.formatOnSave": false,
+		},
+	}
+}

@@ -106,7 +106,7 @@ in
       unset NIX_CFLAGS_COMPILE
       unset NIX_CFLAGS_COMPILE_FOR_BUILD
 
-      cat <<EOF > easytier-gui/local.properties
+      cat <<EOF > sdwan-gui/local.properties
       sdk.dir=$ANDROID_SDK_ROOT
       ndk.dir=$ANDROID_NDK_ROOT
       cmake.dir=$cmake_root

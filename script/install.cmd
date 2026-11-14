@@ -66,12 +66,20 @@ param(
     [string]$Proxy = "http://127.0.0.1:7890",
 
     [Parameter(Mandatory = $false)]
+    [Alias("r")]
+    [string]$ReleaseBaseUrl = "",
+
+    [Parameter(Mandatory = $false)]
+    [Alias("rt")]
+    [string]$ReleaseToken = "",
+
+    [Parameter(Mandatory = $false)]
     [Alias("c")]
     [string]$ConfigType,
 
     [Parameter(Mandatory = $false)]
     [Alias("n")]
-    [string]$ServiceName = "EasyTierService",
+    [string]$ServiceName = "SDWANService",
 
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ServiceArgs
@@ -91,7 +99,9 @@ function Invoke-WebRequestCompatible {
         [Parameter(Mandatory = $true)]
         [string]$Uri,
         [Parameter(Mandatory = $false)]
-        [string]$OutFile
+        [string]$OutFile,
+        [Parameter(Mandatory = $false)]
+        [hashtable]$Headers
     )
 
     if ($PSVersionTable.PSVersion.Major -lt 5) {
@@ -99,6 +109,9 @@ function Invoke-WebRequestCompatible {
             $client = New-Object System.Net.WebClient
             if ($UseProxy) {
                 $client.Proxy = New-Object System.Net.WebProxy($Proxy)
+            }
+            if ($Headers) {
+                foreach ($key in $Headers.Keys) { $client.Headers.Add($key, $Headers[$key]) }
             }
             if ($OutFile) {
                 $client.DownloadFile($Uri, $OutFile)
@@ -120,6 +133,9 @@ function Invoke-WebRequestCompatible {
         }
         if ($UseProxy) {
             $params.Proxy = $Proxy
+        }
+        if ($Headers) {
+            $params.Headers = $Headers
         }
         if ($OutFile) {
             $params.OutFile = $OutFile
@@ -152,6 +168,9 @@ function Invoke-RestMethodCompatible {
         }
         if ($UseProxy) {
             $params.Proxy = $Proxy
+        }
+        if ($Headers) {
+            $params.Headers = $Headers
         }
         return Invoke-RestMethod @params
     }
@@ -295,16 +314,15 @@ function Initialize-RegistryEntryExists {
 }
 function Get-ServiceNames {
     Initialize-RegistryEntryExists
-    try {
-        $value = (Get-ItemProperty -Path $RegistryPath -Name $RegistryName).$RegistryName
+    $names = @()
+    foreach ($path in @($RegistryPath, $LegacyRegistryPath)) {
+        try {
+            $value = (Get-ItemProperty -Path $path -Name $RegistryName -ErrorAction Stop).$RegistryName
+            if ($value) { $names += $value }
+        }
+        catch { }
     }
-    catch {
-        return @()
-    }
-    if ($null -eq $value -or $value.Count -eq 0) {
-        return @()
-    }
-    return $value
+    return @($names | Select-Object -Unique)
 }
 function Save-ServiceName {
     [CmdletBinding()]
@@ -327,7 +345,11 @@ function Remove-ServiceName {
     $existing = Get-ServiceNames
     if ($existing -contains $Name) {
         $updated = $existing | Where-Object { $_ -ne $Name }
-        Set-ItemProperty -Path $RegistryPath -Name $RegistryName -Value $updated -Force
+        foreach ($path in @($RegistryPath, $LegacyRegistryPath)) {
+            if (Test-Path $path) {
+                Set-ItemProperty -Path $path -Name $RegistryName -Value $updated -Force
+            }
+        }
     }
 }
 function Test-ServiceNameExists {
@@ -382,7 +404,7 @@ function Get-LocalVersion {
     }
     try {
         $versionOutput = & $CorePath --version 2>$null
-        if ($versionOutput -match "easytier-core\s+([0-9]+\.[0-9]+\.[0-9]+)") {
+        if ($versionOutput -match "sdwan-core\s+([0-9]+\.[0-9]+\.[0-9]+)") {
             return [System.Version]$matches[1]
         }
         else {
@@ -394,18 +416,51 @@ function Get-LocalVersion {
     }
 }
 function Get-RemoteVersion {
-    param([PSCustomObject]$response)
+    param([string]$Tag)
     try {
-        return [System.Version]$response.tag_name.TrimStart("v")
+        $normalized = (("$Tag".Trim()) -replace '^v', '') -replace '-.*$', ''
+        return [System.Version]$normalized
     }
     catch {
-        throw "无法从 GitHub 获取最新版本信息`n$response"
+        throw "无法解析发布渠道返回的版本标签: $Tag`n$_"
     }
 }
-function Get-EasyTier {
+function Get-ReleaseChannel {
+    if ([string]::IsNullOrWhiteSpace($ReleaseBaseUrl)) {
+        $ReleaseBaseUrl = [Environment]::GetEnvironmentVariable('SDWAN_RELEASE_BASE_URL')
+    }
+    if ([string]::IsNullOrWhiteSpace($ReleaseToken)) {
+        $ReleaseToken = [Environment]::GetEnvironmentVariable('SDWAN_RELEASE_TOKEN')
+    }
+    if ([string]::IsNullOrWhiteSpace($ReleaseToken)) {
+        $ReleaseToken = [Environment]::GetEnvironmentVariable('GITHUB_TOKEN')
+    }
+    $base = "$ReleaseBaseUrl".TrimEnd('/')
+    if ([string]::IsNullOrWhiteSpace($base)) {
+        throw "未配置发布渠道。请设置 SDWAN_RELEASE_BASE_URL 或传入 -ReleaseBaseUrl。"
+    }
+    $headers = @{ 'User-Agent' = 'SDWAN-Installer/1.0' }
+    if (-not [string]::IsNullOrWhiteSpace($ReleaseToken)) {
+        $headers['Authorization'] = "Bearer $ReleaseToken"
+    }
+    if ($base -match '^https://github[.]com/[^/]+/[^/]+/?$') {
+        $versionUrl = "$base/releases/latest/download/VERSION"
+        $assetBase = "$base/releases/download"
+    }
+    else {
+        $versionUrl = "$base/VERSION"
+        $assetBase = $base
+    }
+    return [pscustomobject]@{
+        VersionUrl = $versionUrl
+        AssetBase  = $assetBase
+        Headers    = $headers
+    }
+}
+function Get-SDWAN {
     $Arch = Get-SystemArchitecture
 
-    $tempDirectory = Join-Path $ScriptRoot "easytier_update"
+    $tempDirectory = Join-Path $ScriptRoot "sdwan_update"
 
     try {
         if (-not (Test-Path $tempDirectory)) {
@@ -416,38 +471,37 @@ function Get-EasyTier {
         throw "无法创建文件夹 $tempDirectory`n$_"
     }
 
+    $channel = Get-ReleaseChannel
     try {
         Write-Host "检查最新版本..." -ForegroundColor Green
-        $response = Invoke-RestMethodCompatible -Uri "https://api.github.com/repos/EasyTier/EasyTier/releases/latest"
-        $latestVersion = Get-RemoteVersion($response)
+        $versionResponse = Invoke-WebRequestCompatible -Uri $channel.VersionUrl -Headers $channel.Headers
+        $versionTag = if ($versionResponse -is [string]) { $versionResponse } else { $versionResponse.Content }
+        $versionTag = "$versionTag".Trim()
+        $latestVersion = Get-RemoteVersion -Tag $versionTag
     }
     catch {
-        throw "获取最新版本失败。请检查网络连接或API请求达到上限`n$_"
+        throw "获取最新版本失败。请检查发布渠道地址或网络连接`n$_"
     }
 
-    $localVersion = Get-LocalVersion($EasyTierPath)
+    $localVersion = Get-LocalVersion($SDWANPath)
     if ($localVersion -ge $latestVersion) {
-        Write-Host "EasyTier 已是最新版本 $localVersion" -ForegroundColor Green
+        Write-Host "SDWAN 已是最新版本 $localVersion" -ForegroundColor Green
         return
     }
 
-    $asset = $response.assets | Where-Object { $_.name -like "easytier-$Arch*.zip" } | Select-Object -First 1
-    if ($asset) {
-        Write-Output "发现新版本 $latestVersion"
-        $downloadUrl = $asset.browser_download_url
-        if ($UseGitHubProxy) {
-            $downloadUrl = "$GitHubProxy$downloadUrl"
-        }
+    $assetArch = $Arch -replace '^windows-', ''
+    $assetName = "sdwan-windows-$assetArch-$versionTag.zip"
+    $downloadUrl = "$($channel.AssetBase)/$versionTag/$assetName"
+    if ($UseGitHubProxy) {
+        $downloadUrl = "$GitHubProxy$downloadUrl"
     }
-    else {
-        throw "未适配当前平台!"
-    }
-
-    $updateFile = Join-Path $tempDirectory $asset.name
+    Write-Output "发现新版本 $versionTag"
+    Write-Output "下载地址: $downloadUrl"
+    $updateFile = Join-Path $tempDirectory $assetName
 
     try {
         Write-Output "开始下载: $downloadUrl"
-        Invoke-WebRequestCompatible -Uri $downloadUrl -OutFile $updateFile
+        Invoke-WebRequestCompatible -Uri $downloadUrl -OutFile $updateFile -Headers $channel.Headers
     }
     catch {
         throw "下载失败!`n$_"
@@ -468,7 +522,7 @@ function Get-EasyTier {
     if ($activeServices) {
         try {
             Write-Host "发现正在运行的服务: $ServiceName" -ForegroundColor Yellow
-            Write-Host "停止 EasyTier 服务..." -ForegroundColor Yellow
+            Write-Host "停止 SDWAN 服务..." -ForegroundColor Yellow
             $activeServices | Stop-Service -Force
         }
         catch {
@@ -484,7 +538,7 @@ function Get-EasyTier {
         throw "更新文件失败!`n$_"
     }
 
-    $localVersion = Get-LocalVersion($EasyTierPath)
+    $localVersion = Get-LocalVersion($SDWANPath)
     if ($localVersion -ge $latestVersion) {
         if ($activeServices) {
             try {
@@ -495,7 +549,7 @@ function Get-EasyTier {
                 throw "服务启动失败!`n$_"
             }
         }
-        Write-Host "EasyTier 已成功更新到版本 $latestVersion" -ForegroundColor Green
+        Write-Host "SDWAN 已成功更新到版本 $latestVersion" -ForegroundColor Green
     }
     else {
         throw "更新文件失败! 请检查脚本是否过时或者文件/文件夹是否被其他程序占用"
@@ -504,7 +558,7 @@ function Get-EasyTier {
 }
 
 $HelpText = @"
-EasyTier 服务管理脚本
+SDWAN 服务管理脚本
 
 【使用方式】
 直接双击运行或在命令行中执行:
@@ -517,16 +571,23 @@ EasyTier 服务管理脚本
         显示此帮助信息并退出。
 
     -U / -Update
-        更新 EasyTier 到最新版本
+        更新 SDWAN 到最新版本
 
     -X / -Uninstall
-        卸载 EasyTier 服务
+        卸载 SDWAN 服务
+
+    -R / -ReleaseBaseUrl <地址>
+        发布渠道根地址；也支持 https://github.com/<owner>/<repo>
+        未指定时读取环境变量 SDWAN_RELEASE_BASE_URL
+
+    -RT / -ReleaseToken <令牌>
+        私有 GitHub 仓库访问令牌（也可用 SDWAN_RELEASE_TOKEN / GITHUB_TOKEN）
 
     -UGHP / -UseGitHubProxy
-        使用 GitHub 镜像代理下载 (默认: $false)
+        (已废弃) 自建发布渠道下不再需要 GitHub 镜像代理
 
     -GHP / -GitHubProxy <代理地址>
-        指定 GitHub 镜像代理地址 (默认: https://ghfast.top/)
+        (已废弃) 保留以兼容旧命令行
 
     -UP / -UseProxy
         使用自定义代理 (默认: $false)
@@ -541,7 +602,7 @@ EasyTier 服务管理脚本
         * CLI    使用命令行直接传参
 
     -N / -ServiceName <名称>
-        指定安装的服务名称 (默认: EasyTierService)
+        指定安装的服务名称 (默认: SDWANService)
 
     <其他参数...>
         当选择 CLI 模式时，用于传递自定义参数
@@ -562,22 +623,24 @@ EasyTier 服务管理脚本
     3. CLI 模式: 
         直接通过命令行参数传递任意配置
 
-【代理设置说明】
-    * UseGitHubProxy 和 UseProxy 参数不能同时使用
-    * 使用 GitHub 镜像代理可加速下载
+【发布渠道说明】
+    * 静态文件服务: <BaseUrl>/VERSION 与 <BaseUrl>/<tag>/sdwan-windows-<arch>-<tag>.zip
+    * GitHub 仓库: 自动使用 /releases/latest/download/VERSION 与 /releases/download/<tag>/<asset>
+    * 私有仓库请设置 SDWAN_RELEASE_TOKEN
+    * UseGitHubProxy 已废弃；如需代理请使用 -UseProxy / -Proxy
 
 【示例】
     1. 使用本地配置文件安装: 
         install.cmd -ConfigType File
 
     2. 使用远程服务器并设定服务名称: 
-        install.cmd -ConfigType Remote -ServiceName EasyTierService
+        install.cmd -ConfigType Remote -ServiceName SDWANService
 
     3. 使用命令行传参: 
         install.cmd -ConfigType CLI --ipv4 x.x.x.x --network-name xxx --network-secret yyy --peers tcp://peer_host:11010
 
-    4. 使用 GitHub 镜像代理更新: 
-        install.cmd -Update -UseGitHubProxy
+    4. 使用自己的 GitHub 仓库作为发布渠道更新: 
+        install.cmd -Update -ReleaseBaseUrl https://github.com/zzxym/sdwan
 
     5. 使用系统代理安装: 
         install.cmd -UseProxy -Proxy http://127.0.0.1:8080
@@ -592,7 +655,7 @@ $WatchDogTemplate = @"
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Date>$((Get-Date).ToString("s"))</Date>
-    <URI>\EasyTierWatchDog</URI>
+    <URI>\SDWANWatchDog</URI>
   </RegistrationInfo>
   <Triggers>
     <EventTrigger>
@@ -627,12 +690,21 @@ $WatchDogTemplate = @"
 </Task>
 "@
 
-$host.ui.rawui.WindowTitle = "安装/卸载/更新 EasyTier 服务"
+$host.ui.rawui.WindowTitle = "安装/卸载/更新 SDWAN 服务"
 Clear-Host
 $ScriptRoot = (Get-Location).Path
-$RegistryPath = "HKLM:\SOFTWARE\EasyTierServiceManage"
+$RegistryPath = "HKLM:\SOFTWARE\SDWANServiceManage"
+$LegacyRegistryPath = "HKLM:\SOFTWARE\SdwanServiceManage"
 $RegistryName = "Services"
-$EasyTierPath = Join-Path $ScriptRoot "easytier-core.exe"
+$SDWANPath = Join-Path $ScriptRoot "sdwan-core.exe"
+
+if ([string]::IsNullOrWhiteSpace($ReleaseBaseUrl)) {
+    $ReleaseBaseUrl = [Environment]::GetEnvironmentVariable("SDWAN_RELEASE_BASE_URL")
+}
+$ReleaseBaseUrl = "$ReleaseBaseUrl".TrimEnd('/')
+if ($UseGitHubProxy) {
+    Write-Host "Note: -UseGitHubProxy is deprecated for self-hosted release channels." -ForegroundColor Yellow
+}
 $OPTIONS = @()
 
 $ErrorActionPreference = "Stop"
@@ -671,16 +743,17 @@ try {
             }
         }
         Show-Pause -Text "按任意键退出..."
-        Unregister-ScheduledTask -TaskName "EasyTierWatchDog" -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+        Unregister-ScheduledTask -TaskName "SDWANWatchDog" -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+        Unregister-ScheduledTask -TaskName "SdwanWatchDog" -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
         exit 0
     }
     if ($Update) {
-        Get-EasyTier
+        Get-SDWAN
         Show-Pause -Text "按任意键退出..."
         exit 0
     }
-    if (-not (Test-Path $EasyTierPath)) {
-        Get-EasyTier
+    if (-not (Test-Path $SDWANPath)) {
+        Get-SDWAN
     }
     if (-not $ConfigType) {
         $choices = @(
@@ -688,7 +761,7 @@ try {
             [System.Management.Automation.Host.ChoiceDescription]::new("&Remote", "服务器集中管理"),
             [System.Management.Automation.Host.ChoiceDescription]::new("&CLI", "命令行传参")
         )
-        $selected = $Host.UI.PromptForChoice("您准备如何配置EasyTier?", "请选择: ", $choices, 0)
+        $selected = $Host.UI.PromptForChoice("您准备如何配置SDWAN?", "请选择: ", $choices, 0)
         $ConfigType = @("File", "Remote", "CLI")[$selected]
     }
     switch ($ConfigType) {
@@ -716,7 +789,7 @@ try {
             throw "未知配置类型: $ConfigType"
         }
     }
-    $BinaryPath = "`"$EasyTierPath`" $($OPTIONS -join ' ')" 
+    $BinaryPath = "`"$SDWANPath`" $($OPTIONS -join ' ')" 
     Write-Host "生成的配置参数如下: " -ForegroundColor Yellow
     Write-Host ($OPTIONS -join " ") -ForegroundColor DarkGray
     if (Show-YesNoPrompt -Message "确认安装配置？" -DefaultIndex 1) {
@@ -724,13 +797,13 @@ try {
             Stop-Service -Name $ServiceName -Force | Out-Null
             Remove-ServiceCompatible -Name $ServiceName
         }
-        New-Service -Name $ServiceName -DisplayName "EasyTier" `
-            -Description "EasyTier 核心服务" `
+        New-Service -Name $ServiceName -DisplayName "SDWAN" `
+            -Description "SDWAN 核心服务" `
             -StartupType Automatic `
             -BinaryPathName $BinaryPath | Out-Null
         Start-Service -Name $ServiceName | Out-Null
 
-        Register-ScheduledTask -TaskName "EasyTierWatchDog" -User "SYSTEM" -Xml $WatchDogTemplate.Replace("%#ServiceName#%", $ServiceName) -Force | Out-Null
+        Register-ScheduledTask -TaskName "SDWANWatchDog" -User "SYSTEM" -Xml $WatchDogTemplate.Replace("%#ServiceName#%", $ServiceName) -Force | Out-Null
         Save-ServiceName -Name $ServiceName
         Write-Host "安装完成。" -ForegroundColor Green
     }
@@ -742,7 +815,8 @@ try {
 catch {
     Write-Host "发生错误: $_" -ForegroundColor Red
     Show-Pause -Text "按任意键退出..."
-    Unregister-ScheduledTask -TaskName "EasyTierWatchDog" -Confirm:$false -ErrorAction SilentlyContinue
+    Unregister-ScheduledTask -TaskName "SDWANWatchDog" -Confirm:$false -ErrorAction SilentlyContinue
+    Unregister-ScheduledTask -TaskName "SdwanWatchDog" -Confirm:$false -ErrorAction SilentlyContinue
     exit 1
 }
 

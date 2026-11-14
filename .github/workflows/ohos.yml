@@ -1,4 +1,4 @@
-name: EasyTier OHOS
+name: SDWAN OHOS
 
 on:
   push:
@@ -41,7 +41,7 @@ jobs:
           components: rustfmt
 
       - name: Check formatting
-        working-directory: ./easytier-contrib/easytier-ohrs
+        working-directory: ./sdwan-contrib/sdwan-ohrs
         run: cargo fmt --all -- --check
 
   pre_job:
@@ -60,7 +60,7 @@ jobs:
           concurrent_skipping: "same_content_newer"
           skip_after_successful_duplicate: "true"
           cancel_others: "true"
-          paths: '["Cargo.toml", "Cargo.lock", "easytier/**", "easytier-contrib/easytier-ohrs/**", ".github/workflows/ohos.yml", ".github/actions/**"]'
+          paths: '["Cargo.toml", "Cargo.lock", "sdwan/**", "sdwan-contrib/sdwan-ohrs/**", ".github/workflows/ohos.yml", ".github/actions/**"]'
 
   build-ohos:
     runs-on: ubuntu-latest
@@ -80,22 +80,22 @@ jobs:
             git \
             pkg-config curl libgl1-mesa-dev expect
 
-      - name: Resolve easytier version
+      - name: Resolve sdwan version
         run: |
           set -e
       
-          UPSTREAM_REPO="https://github.com/EasyTier/EasyTier.git"
+          REPO_URL="https://github.com/${{ github.repository }}.git"
       
-          git remote add upstream "$UPSTREAM_REPO" 2>/dev/null || true
-          git fetch --unshallow upstream main || git fetch upstream main
-          git fetch --tags upstream --force
+          git remote set-url origin "$REPO_URL"
+          git fetch --unshallow origin main || git fetch origin main
+          git fetch --tags origin --force
       
           # 读取 cargo 版本
-          CARGO_VERSION=$(cargo metadata --format-version 1 --no-deps --manifest-path easytier/Cargo.toml \
+          CARGO_VERSION=$(cargo metadata --format-version 1 --no-deps --manifest-path sdwan/Cargo.toml \
             | jq -r '.packages[0].version')
       
-          # 获取 upstream/main 最新 tag
-          LAST_TAG=$(git describe --tags --abbrev=0 upstream/main 2>/dev/null || echo "")
+          # 获取 origin/main 最新 tag
+          LAST_TAG=$(git describe --tags --abbrev=0 origin/main 2>/dev/null || echo "")
           LAST_TAG_VERSION="${LAST_TAG#v}"
       
           # 语义版本比较
@@ -105,31 +105,31 @@ jobs:
       
           if [ -z "$LAST_TAG_VERSION" ]; then
             BASE_VERSION="$CARGO_VERSION"
-            DIFF_COUNT=$(git rev-list --count upstream/main)
+            DIFF_COUNT=$(git rev-list --count origin/main)
           elif version_gt "$CARGO_VERSION" "$LAST_TAG_VERSION"; then
             BASE_VERSION="$CARGO_VERSION"
             DIFF_COUNT=0
           else
             BASE_VERSION="$LAST_TAG_VERSION"
-            DIFF_COUNT=$(git rev-list --count "${LAST_TAG}..upstream/main")
+            DIFF_COUNT=$(git rev-list --count "${LAST_TAG}..origin/main")
           fi
       
-          COMMIT_HASH=$(git rev-parse --short upstream/main)
-          EASYTIER_VERSION="${BASE_VERSION}-${DIFF_COUNT}-${COMMIT_HASH}"
+          COMMIT_HASH=$(git rev-parse --short origin/main)
+          SDWAN_VERSION="${BASE_VERSION}-${DIFF_COUNT}-${COMMIT_HASH}"
       
-          echo "EASYTIER_VERSION=$EASYTIER_VERSION"
-          echo "EASYTIER_VERSION=$EASYTIER_VERSION" >> $GITHUB_ENV
+          echo "SDWAN_VERSION=$SDWAN_VERSION"
+          echo "SDWAN_VERSION=$SDWAN_VERSION" >> $GITHUB_ENV
       
-          cd ./easytier-contrib/easytier-ohrs/package
-          jq --arg v "$EASYTIER_VERSION" '.version = $v' oh-package.json5 > oh-package.tmp.json5
+          cd ./sdwan-contrib/sdwan-ohrs/package
+          jq --arg v "$SDWAN_VERSION" '.version = $v' oh-package.json5 > oh-package.tmp.json5
           mv oh-package.tmp.json5 oh-package.json5
 
 
       - name: Generate CHANGELOG.md for current commit
-        working-directory: ./easytier-contrib/easytier-ohrs/package
+        working-directory: ./sdwan-contrib/sdwan-ohrs/package
         run: |
           {
-            echo "## easytier-ohrs ${EASYTIER_VERSION}"
+            echo "## sdwan-ohrs ${SDWAN_VERSION}"
             echo
             git log -1 --pretty=format:"- %s"
             echo
@@ -140,7 +140,7 @@ jobs:
 
       - name: Download and Extract Custom SDK
         run: |
-          wget https://github.com/FrankHan052176/Easytier-OHOS-sdk/releases/download/v1/ohos-sdk.zip -O /tmp/ohos-sdk.zip
+          wget https://github.com/FrankHan052176/Sdwan-OHOS-sdk/releases/download/v1/ohos-sdk.zip -O /tmp/ohos-sdk.zip
           sudo unzip -o /tmp/ohos-sdk.zip -d /tmp/custom-sdk
           sudo cp -rf /tmp/custom-sdk/linux/native/* $OHOS_NDK_HOME/native
           echo "Custom SDK files deployed to $OHOS_NDK_HOME/native"
@@ -173,7 +173,7 @@ jobs:
           sudo chmod +x $OHOS_NDK_HOME/native/llvm/aarch64-unknown-linux-ohos-clang.sh
 
       - name: Build latest Har
-        working-directory: ./easytier-contrib/easytier-ohrs
+        working-directory: ./sdwan-contrib/sdwan-ohrs
         run: |
           sudo apt-get install -y llvm clang lldb lld
           sudo apt-get install -y protobuf-compiler
@@ -181,37 +181,37 @@ jobs:
           ohrs doctor
           ohrs build --release --arch aarch
           ohrs artifact
-          mv package.har easytier-ohrs.har
+          mv package.har sdwan-ohrs.har
 
       - name: Build Release Package
         if: startsWith(github.ref, 'refs/tags/')
-        working-directory: ./easytier-contrib/easytier-ohrs
+        working-directory: ./sdwan-contrib/sdwan-ohrs
         run: |
-          echo "🎉 Official Release detected. Building easytier-release..."
+          echo "🎉 Official Release detected. Building sdwan-release..."
           TAG_NAME="${{ github.ref_name }}"
           TAG_VERSION="${TAG_NAME#v}"
           echo "Release Version: $TAG_VERSION"
           cd package
-          jq --arg v "$TAG_VERSION" '.name = "easytier-release" | .version = $v' oh-package.json5 > oh-package.tmp.json5 && mv oh-package.tmp.json5 oh-package.json5
+          jq --arg v "$TAG_VERSION" '.name = "sdwan-release" | .version = $v' oh-package.json5 > oh-package.tmp.json5 && mv oh-package.tmp.json5 oh-package.json5
           cd ..
           ohrs build --release --arch aarch
           cd dist/arm64-v8a
-          mv libeasytier_ohrs.so libeasytier_release.so
+          mv libsdwan_ohrs.so libsdwan_release.so
           cd ../..
           ohrs artifact
-          mv package.har easytier-release.har
+          mv package.har sdwan-release.har
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
-          name: easytier-ohos
+          name: sdwan-ohos
           path: |
-            ./easytier-contrib/easytier-ohrs/easytier-ohrs.har
+            ./sdwan-contrib/sdwan-ohrs/sdwan-ohrs.har
           retention-days: 5
           if-no-files-found: error
 
       - name: Publish To Center Ohpm
-        working-directory: ./easytier-contrib/easytier-ohrs
+        working-directory: ./sdwan-contrib/sdwan-ohrs
         env:
           OHPM_PRIVATE_KEY: ${{ secrets.OHPM_PRIVATE_KEY }}
           OHPM_KEY_PASSPHRASE: ${{ secrets.OHPM_KEY_PASSPHRASE }}
@@ -229,18 +229,18 @@ jobs:
           chmod 755 /home/runner/work/ohpm_crypto/*
           PASSPHRASE="$(printf '%s' "$OHPM_KEY_PASSPHRASE" | tr -d '\r\n')"
           ohpm config set key_passphrase "$PASSPHRASE"
-          ohpm publish easytier-ohrs.har
+          ohpm publish sdwan-ohrs.har
           
       - name: Publish To Private Ohpm
-        working-directory: ./easytier-contrib/easytier-ohrs
+        working-directory: ./sdwan-contrib/sdwan-ohrs
         if: ${{ env.OHPM_PUBLISH_CODE != '' && github.event_name == 'push' }}
         run: |
           printf '%s' "${{ secrets.CODEARTS_PRIVATE_OHPM }}" > ~/.ohpm/.ohpmrc
           ohpm config set strict_ssl false
-          ohpm publish easytier-ohrs.har
-          if [ -f "easytier-release.har" ]; then
+          ohpm publish sdwan-ohrs.har
+          if [ -f "sdwan-release.har" ]; then
              echo "🚀 Publishing Release package..."
-             ohpm publish easytier-release.har
+             ohpm publish sdwan-release.har
           fi
           curl --header "Content-Type: application/json" --request POST --data "{}" ${{ secrets.CODEARTS_WEBHOOKS }}
 

@@ -1,8 +1,8 @@
-# Contributing to EasyTier
+# Contributing to SDWAN
 
 [中文版](CONTRIBUTING_zh.md)
 
-Thank you for your interest in contributing to EasyTier! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to SDWAN! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -72,8 +72,8 @@ sudo apt install -y bridge-utils
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/EasyTier/EasyTier.git
-   cd EasyTier
+   git clone https://github.com/zzxym/sdwan.git
+   cd sdwan
    ```
 
 2. Install dependencies:
@@ -89,9 +89,9 @@ sudo apt install -y bridge-utils
 ## Project Structure
 
 ```
-easytier/          # Core functionality and libraries
-easytier-web/      # Web dashboard and frontend
-easytier-gui/      # Desktop GUI application
+sdwan/          # Core functionality and libraries
+sdwan-web/      # Web dashboard and frontend
+sdwan-gui/      # Desktop GUI application
 .github/workflows/ # CI/CD configuration files
 ```
 
@@ -120,7 +120,7 @@ Build artifacts: `target/[target-triple]/release/`
 pnpm -r build
 
 # 2. Build GUI application
-cd easytier-gui
+cd sdwan-gui
 
 # Linux
 pnpm tauri build --target x86_64-unknown-linux-gnu
@@ -133,7 +133,7 @@ pnpm tauri build --target aarch64-apple-darwin     # Apple Silicon
 pnpm tauri build --target x86_64-pc-windows-msvc   # x64
 ```
 
-Build artifacts: `easytier-gui/src-tauri/target/release/bundle/`
+Build artifacts: `sdwan-gui/src-tauri/target/release/bundle/`
 
 ### Building Mobile
 
@@ -145,11 +145,11 @@ rustup target add i686-linux-android
 rustup target add x86_64-linux-android
 
 # 2. Build Android application
-cd easytier-gui
+cd sdwan-gui
 pnpm tauri android build
 ```
 
-Build artifacts: `easytier-gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/`
+Build artifacts: `sdwan-gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/`
 
 ### Build Notes
 
@@ -212,8 +212,8 @@ cargo test --no-default-features --features=full --verbose
 
 ## Additional Resources
 
-- [Issue Tracker](https://github.com/EasyTier/EasyTier/issues)
-- [Project Documentation](https://github.com/EasyTier/EasyTier/wiki)
+- [Issue Tracker](https://github.com/zzxym/sdwan/issues)
+- [Project Documentation](https://github.com/zzxym/sdwan/wiki)
 
 ## Questions or Need Help?
 
@@ -222,4 +222,4 @@ Feel free to:
 - Join our community discussions
 - Reach out to maintainers
 
-Thank you for contributing to EasyTier! 
+Thank you for contributing to SDWAN! 

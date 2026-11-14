@@ -1,5 +1,5 @@
 packages:
-  - 'easytier-web/frontend'
-  - 'easytier-web/frontend-lib'
-  - 'easytier-gui'
+  - 'sdwan-web/frontend'
+  - 'sdwan-web/frontend-lib'
+  - 'sdwan-gui'
   - 'tauri-plugin-vpnservice'

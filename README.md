@@ -1,13 +1,13 @@
-# EasyTier
+# SDWAN
 
-[![Github release](https://img.shields.io/github/v/tag/EasyTier/EasyTier)](https://github.com/EasyTier/EasyTier/releases)
-[![GitHub](https://img.shields.io/github/license/EasyTier/EasyTier)](https://github.com/EasyTier/EasyTier/blob/main/LICENSE)
-[![GitHub last commit](https://img.shields.io/github/last-commit/EasyTier/EasyTier)](https://github.com/EasyTier/EasyTier/commits/main)
-[![GitHub issues](https://img.shields.io/github/issues/EasyTier/EasyTier)](https://github.com/EasyTier/EasyTier/issues)
-[![GitHub Core Actions](https://github.com/EasyTier/EasyTier/actions/workflows/core.yml/badge.svg)](https://github.com/EasyTier/EasyTier/actions/workflows/core.yml)
-[![GitHub GUI Actions](https://github.com/EasyTier/EasyTier/actions/workflows/gui.yml/badge.svg)](https://github.com/EasyTier/EasyTier/actions/workflows/gui.yml)
-[![GitHub Test Actions](https://github.com/EasyTier/EasyTier/actions/workflows/test.yml/badge.svg)](https://github.com/EasyTier/EasyTier/actions/workflows/test.yml)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/EasyTier/EasyTier)
+[![Github release](https://img.shields.io/github/v/tag/zzxym/sdwan)](https://github.com/zzxym/sdwan/releases)
+[![GitHub](https://img.shields.io/github/license/zzxym/sdwan)](https://github.com/zzxym/sdwan/blob/main/LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/zzxym/sdwan)](https://github.com/zzxym/sdwan/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues/zzxym/sdwan)](https://github.com/zzxym/sdwan/issues)
+[![GitHub Core Actions](https://github.com/zzxym/sdwan/actions/workflows/core.yml/badge.svg)](https://github.com/zzxym/sdwan/actions/workflows/core.yml)
+[![GitHub GUI Actions](https://github.com/zzxym/sdwan/actions/workflows/gui.yml/badge.svg)](https://github.com/zzxym/sdwan/actions/workflows/gui.yml)
+[![GitHub Test Actions](https://github.com/zzxym/sdwan/actions/workflows/test.yml/badge.svg)](https://github.com/zzxym/sdwan/actions/workflows/test.yml)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/zzxym/sdwan)
 
 [简体中文](/README_CN.md) | [English](/README.md)
 
@@ -18,7 +18,7 @@
 <img src="assets/running-page.png" width="300" alt="running page">
 </p>
 
-📚 **[Full Documentation](https://easytier.cn/en/)** | 🖥️ **[Web Console](https://easytier.cn/web)** | 📝 **[Download Releases](https://github.com/EasyTier/EasyTier/releases)** | 🧩 **[Third Party Tools](https://easytier.cn/en/guide/installation_gui.html#third-party-graphical-interfaces)** | ❤️ **[Sponsor](#sponsor)**
+📚 **[Full Documentation](https://sdwan.cn/en/)** | 🖥️ **[Web Console](https://sdwan.cn/web)** | 📝 **[Download Releases](https://github.com/zzxym/sdwan/releases)** | 🧩 **[Third Party Tools](https://sdwan.cn/en/guide/installation_gui.html#third-party-graphical-interfaces)** | ❤️ **[Sponsor](#sponsor)**
 
 ## Features
 
@@ -48,42 +48,55 @@
 
 Choose the installation method that best suits your needs:
 
+> **Release channel**: SDWAN no longer consumes upstream GitHub Releases.
+> Configure `SDWAN_RELEASE_BASE_URL` (or pass `--release-url`) to point at your own static file host:
+>
+> ```text
+> <BaseUrl>/VERSION                                 -> plain text tag, e.g. v2.6.4
+> <BaseUrl>/<tag>/sdwan-linux-<arch>-<tag>.zip
+> <BaseUrl>/<tag>/sdwan-windows-<arch>-<tag>.zip
+> ```
+>
+> If the base URL is `https://github.com/<owner>/<repo>`, GitHub Releases URLs are used automatically (`/releases/latest/download/VERSION`, `/releases/download/<tag>/<asset>`); set `SDWAN_RELEASE_TOKEN` for private repositories.
+>
 Linux (Recommended):
 ```bash
-curl -fsSL "https://github.com/EasyTier/EasyTier/blob/main/script/install.sh?raw=true" | sudo bash -s install
+export SDWAN_RELEASE_BASE_URL="https://github.com/zzxym/sdwan"
+curl -fsSL "https://github.com/zzxym/sdwan/blob/main/script/install.sh?raw=true" | sudo -E bash -s install
 ```
 
 Homebrew (MacOS/Linux):
 ```bash
 brew tap brewforge/chinese
-brew install --cask easytier-gui
+brew install --cask sdwan-gui
 ```
 
 Windows (Recommended, run with administrator privileges):
 ```powershell
-irm "https://github.com/EasyTier/EasyTier/blob/main/script/install.ps1?raw=true" | iex
+$env:SDWAN_RELEASE_BASE_URL = "https://github.com/zzxym/sdwan"
+irm "https://github.com/zzxym/sdwan/blob/main/script/install.ps1?raw=true" | iex
 ```
 
 Install via cargo (Latest development version): 
 ```bash
-cargo install --git https://github.com/EasyTier/EasyTier.git easytier
+cargo install --git https://github.com/zzxym/sdwan.git sdwan
 ```
 
-[Install pre-built binary](https://github.com/EasyTier/EasyTier/releases) (Recommended, All platforms supported)
+Pre-built binaries are published on the [self-hosted release channel](https://github.com/zzxym/sdwan/releases/latest/download/VERSION) (All platforms supported).
 
-[Install via Docker](https://easytier.cn/en/guide/installation.html#installation-methods)
+[Install via Docker](https://sdwan.cn/en/guide/installation.html#installation-methods)
 
-[Install OpenWrt ipk package](https://github.com/EasyTier/luci-app-easytier)
+[Install OpenWrt ipk package](https://github.com/zzxym/luci-app-sdwan)
 
 Additional steps:
 
-[One-Click Register Service](https://easytier.cn/en/guide/network/oneclick-install-as-service.html) (Automatically start when the system boots and run in the background)
+[One-Click Register Service](https://sdwan.cn/en/guide/network/oneclick-install-as-service.html) (Automatically start when the system boots and run in the background)
 
 ### 🚀 Basic Usage
 
 #### Quick Networking with Shared Nodes
 
-EasyTier supports quick networking using shared public nodes. When you don't have a public IP, you can use the free shared nodes provided by the EasyTier community. Nodes will automatically attempt NAT traversal and establish P2P connections. When P2P fails, data will be relayed through shared nodes.
+SDWAN supports quick networking using shared public nodes. When you don't have a public IP, you can use the free shared nodes provided by the SDWAN community. Nodes will automatically attempt NAT traversal and establish P2P connections. When P2P fails, data will be relayed through shared nodes.
 
 When using shared nodes, each node entering the network needs to provide the same `--network-name` and `--network-secret` parameters as the unique identifier of the network.
 
@@ -93,17 +106,17 @@ Taking two nodes as an example (Please use more complex network name to avoid co
 
 ```bash
 # Run with administrator privileges
-sudo easytier-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP>:11010
+sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP>:11010
 ```
 
 2. Run on Node B:
 
 ```bash
 # Run with administrator privileges
-sudo easytier-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP>:11010
+sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP>:11010
 ```
 
-After successful execution, you can check the network status using `easytier-cli`:
+After successful execution, you can check the network status using `sdwan-cli`:
 
 ```text
 | ipv4         | hostname       | cost  | lat_ms | loss_rate | rx_bytes | tx_bytes | tunnel_proto | nat_type | id         | version         |
@@ -127,20 +140,20 @@ To improve availability, you can connect to multiple shared nodes simultaneously
 
 ```bash
 # Connect to multiple shared nodes
-sudo easytier-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP1>:11010 -p udp://<SharedNodeIP2>:11010
+sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP1>:11010 -p udp://<SharedNodeIP2>:11010
 ```
 
-Once your network is set up successfully, you can easily configure it to start automatically on system boot. Refer to the [One-Click Register Service guide](https://easytier.cn/en/guide/network/oneclick-install-as-service.html) for step-by-step instructions on registering EasyTier as a system service.
+Once your network is set up successfully, you can easily configure it to start automatically on system boot. Refer to the [One-Click Register Service guide](https://sdwan.cn/en/guide/network/oneclick-install-as-service.html) for step-by-step instructions on registering SDWAN as a system service.
 
 #### Decentralized Networking
 
-EasyTier is fundamentally decentralized, with no distinction between server and client. As long as one device can communicate with any node in the virtual network, it can join the virtual network. Here's how to set up a decentralized network:
+SDWAN is fundamentally decentralized, with no distinction between server and client. As long as one device can communicate with any node in the virtual network, it can join the virtual network. Here's how to set up a decentralized network:
 
 1. Start First Node (Node A):
 
 ```bash
 # Start the first node
-sudo easytier-core -i 10.144.144.1
+sudo sdwan-core -i 10.144.144.1
 ```
 
 After startup, this node will listen on the following ports by default:
@@ -154,7 +167,7 @@ After startup, this node will listen on the following ports by default:
 
 ```bash
 # Connect to the first node using its public IP
-sudo easytier-core -i 10.144.144.2 -p udp://FIRST_NODE_PUBLIC_IP:11010
+sudo sdwan-core -i 10.144.144.2 -p udp://FIRST_NODE_PUBLIC_IP:11010
 ```
 
 3. Verify Connection:
@@ -164,20 +177,20 @@ sudo easytier-core -i 10.144.144.2 -p udp://FIRST_NODE_PUBLIC_IP:11010
 ping 10.144.144.2
 
 # View connected peers
-easytier-cli peer
+sdwan-cli peer
 
 # View routing information
-easytier-cli route
+sdwan-cli route
 
 # View local node information
-easytier-cli node
+sdwan-cli node
 ```
 
 For more nodes to join the network, they can connect to any existing node in the network using the `-p` parameter:
 
 ```bash
 # Connect to any existing node using its public IP
-sudo easytier-core -i 10.144.144.3 -p udp://ANY_EXISTING_NODE_PUBLIC_IP:11010
+sudo sdwan-core -i 10.144.144.3 -p udp://ANY_EXISTING_NODE_PUBLIC_IP:11010
 ```
 
 ### 🔍 Advanced Features
@@ -190,11 +203,11 @@ Assuming the network topology is as follows, Node B wants to share its accessibl
 flowchart LR
 
 subgraph Node A Public IP 22.1.1.1
-nodea[EasyTier<br/>10.144.144.1]
+nodea[SDWAN<br/>10.144.144.1]
 end
 
 subgraph Node B
-nodeb[EasyTier<br/>10.144.144.2]
+nodeb[SDWAN<br/>10.144.144.2]
 end
 
 id1[[10.1.1.0/24]]
@@ -202,11 +215,11 @@ id1[[10.1.1.0/24]]
 nodea <--> nodeb <-.-> id1
 ```
 
-To share a subnet, add the `-n` parameter when starting EasyTier:
+To share a subnet, add the `-n` parameter when starting SDWAN:
 
 ```bash
 # Share subnet 10.1.1.0/24 with other nodes
-sudo easytier-core -i 10.144.144.2 -n 10.1.1.0/24
+sudo sdwan-core -i 10.144.144.2 -n 10.1.1.0/24
 ```
 
 Subnet proxy information will automatically sync to each node in the virtual network, and each node will automatically configure the corresponding route. You can verify the subnet proxy setup:
@@ -215,7 +228,7 @@ Subnet proxy information will automatically sync to each node in the virtual net
 
 ```bash
 # View routing information
-easytier-cli route
+sdwan-cli route
 ```
 
 ![Routing Information](/assets/image-3.png)
@@ -229,7 +242,7 @@ ping 10.1.1.2
 
 #### WireGuard Integration
 
-EasyTier can act as a WireGuard server, allowing any device with a WireGuard client (including iOS and Android) to access the EasyTier network. Here's an example setup:
+SDWAN can act as a WireGuard server, allowing any device with a WireGuard client (including iOS and Android) to access the SDWAN network. Here's an example setup:
 
 ```mermaid
 flowchart LR
@@ -237,11 +250,11 @@ flowchart LR
 ios[[iPhone<br/>WireGuard Installed]]
 
 subgraph Node A Public IP 22.1.1.1
-nodea[EasyTier<br/>10.144.144.1]
+nodea[SDWAN<br/>10.144.144.1]
 end
 
 subgraph Node B
-nodeb[EasyTier<br/>10.144.144.2]
+nodeb[SDWAN<br/>10.144.144.2]
 end
 
 id1[[10.1.1.0/24]]
@@ -249,34 +262,34 @@ id1[[10.1.1.0/24]]
 ios <-.-> nodea <--> nodeb <-.-> id1
 ```
 
-1. Start EasyTier with WireGuard portal enabled:
+1. Start SDWAN with WireGuard portal enabled:
 
 ```bash
 # Listen on 0.0.0.0:11013 and use 10.14.14.0/24 subnet for WireGuard clients
-sudo easytier-core -i 10.144.144.1 --vpn-portal wg://0.0.0.0:11013/10.14.14.0/24
+sudo sdwan-core -i 10.144.144.1 --vpn-portal wg://0.0.0.0:11013/10.14.14.0/24
 ```
 
 2. Get WireGuard client configuration:
 
 ```bash
 # Get WireGuard client configuration
-easytier-cli vpn-portal
+sdwan-cli vpn-portal
 ```
 
 3. In the output configuration:
    - Set `Interface.Address` to an available IP from the WireGuard subnet
-   - Set `Peer.Endpoint` to the public IP/domain of your EasyTier node
+   - Set `Peer.Endpoint` to the public IP/domain of your SDWAN node
    - Import the modified configuration into your WireGuard client
 
 #### Self-Hosted Public Shared Node
 
-You can run your own public shared node to help other nodes discover each other. A public shared node is just a regular EasyTier network (with same network name and secret) that other networks can connect to.
+You can run your own public shared node to help other nodes discover each other. A public shared node is just a regular SDWAN network (with same network name and secret) that other networks can connect to.
 
 To run a public shared node:
 
 ```bash
 # No need to specify IPv4 address for public shared nodes
-sudo easytier-core --network-name mysharednode --network-secret mysharednode
+sudo sdwan-core --network-name mysharednode --network-secret mysharednode
 ```
 
 ## Related Projects
@@ -286,7 +299,7 @@ sudo easytier-core --network-name mysharednode --network-secret mysharednode
 
 ### Contact Us
 
-- 💬 **[Telegram Group](https://t.me/easytier)**
+- 💬 **[Telegram Group](https://t.me/sdwan)**
 - 👥 **[QQ Group]**
   - No.1 [949700262](https://qm.qq.com/q/wFoTUChqZW)
   - No.2 [837676408](https://qm.qq.com/q/4V33DrfgHe)
@@ -294,7 +307,7 @@ sudo easytier-core --network-name mysharednode --network-secret mysharednode
 
 ## License
 
-EasyTier is released under the [LGPL-3.0](https://github.com/EasyTier/EasyTier/blob/main/LICENSE).
+SDWAN is released under the [LGPL-3.0](https://github.com/zzxym/sdwan/blob/main/LICENSE).
 
 ## Sponsor
 
@@ -318,7 +331,7 @@ Special thanks to [Langlang Cloud](https://langlangy.cn/?i26c5a5)  and [RainClou
 </p>
 
 
-If you find EasyTier helpful, please consider sponsoring us. Software development and maintenance require a lot of time and effort, and your sponsorship will help us better maintain and improve EasyTier.
+If you find SDWAN helpful, please consider sponsoring us. Software development and maintenance require a lot of time and effort, and your sponsorship will help us better maintain and improve SDWAN.
 
 <p align="center">
 <img src="assets/wechat.png" width="200">

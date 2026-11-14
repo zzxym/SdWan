@@ -1,17 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
-    "easytier",
-    "easytier-gui/src-tauri",
-    "easytier-rpc-build",
-    "easytier-web",
-    "easytier-contrib/easytier-ffi",
-    "easytier-contrib/easytier-uptime",
-    "easytier-contrib/easytier-android-jni",
+    "sdwan",
+    "sdwan-gui/src-tauri",
+    "sdwan-rpc-build",
+    "sdwan-web",
+    "sdwan-contrib/sdwan-ffi",
+    "sdwan-contrib/sdwan-uptime",
+    "sdwan-contrib/sdwan-android-jni",
 ]
-default-members = ["easytier", "easytier-web"]
+default-members = ["sdwan", "sdwan-web"]
 exclude = [
-    "easytier-contrib/easytier-ohrs", # it needs ohrs sdk
+    "sdwan-contrib/sdwan-ohrs", # it needs ohrs sdk
 ]
 
 [workspace.package]
@@ -28,3 +28,29 @@ lto = true
 codegen-units = 1
 opt-level = 3
 strip = true
+
+# region 本地化外部源码依赖（自建发布渠道，构建不再依赖上游 GitHub）
+# 各仓库位于本仓库上级目录，commit 与 Cargo.lock 锁定 rev 一致
+
+[patch."https://github.com/zzxym/rust-tun"]
+tun-sdwan = { path = "../rust-tun" }
+
+[patch."https://github.com/zzxym/kcp-sys"]
+kcp-sys = { path = "../kcp-sys" }
+
+[patch."https://github.com/zzxym/http_req.git"]
+http_req = { path = "../http_req" }
+
+[patch."https://github.com/zzxym/service-manager-rs.git"]
+service-manager = { path = "../service-manager-rs" }
+
+[patch."https://github.com/zzxym/windivert-rust.git"]
+windivert = { path = "../windivert-rust/windivert" }
+
+[patch."https://github.com/zzxym/thunk.git"]
+thunk-rs = { path = "../thunk/thunk-rs" }
+
+[patch."https://github.com/zzxym/smoltcp.git"]
+smoltcp = { path = "../smoltcp" }
+
+# endregion

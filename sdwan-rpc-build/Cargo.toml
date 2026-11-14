@@ -1,0 +1,20 @@
+[package]
+name = "sdwan-rpc-build"
+description = "Protobuf RPC Service Generator for SDWAN"
+version = "0.1.0"
+edition.workspace = true
+homepage = "https://github.com/zzxym/sdwan"
+repository = "https://github.com/zzxym/sdwan"
+authors = ["kkrainbow"]
+keywords = ["vpn", "p2p", "network", "sdwan"]
+categories = ["network-programming", "command-line-utilities"]
+license-file = "LICENSE"
+readme = "README.md"
+
+[dependencies]
+heck = "0.5"
+prost-build = "0.13"
+
+[features]
+default = []
+internal-namespace = []

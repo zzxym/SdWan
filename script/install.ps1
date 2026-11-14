@@ -1,28 +1,41 @@
 <#
 .SYNOPSIS
-    EasyTier Windows Installer
+    SDWAN Windows Installer
 
 .DESCRIPTION
-    Download EasyTier from GitHub Release and install it.
+    Download SDWAN from the self-hosted release channel and install it.
     Copies binaries to the install directory and updates the system PATH.
+
+    Release channel layout (any plain static file host works):
+      <BaseUrl>/VERSION                                  -> plain text tag, e.g. v2.6.4
+      <BaseUrl>/<tag>/sdwan-windows-<arch>-<tag>.zip    -> archive containing sdwan-core.exe / sdwan-cli.exe
+
+    If <BaseUrl> is https://github.com/<owner>/<repo>, that repository Releases is used:
+      /releases/latest/download/VERSION
+      /releases/download/<tag>/sdwan-windows-<arch>-<tag>.zip
+    For a private repository set SDWAN_RELEASE_TOKEN (or GITHUB_TOKEN).
 
 .PARAMETER Version
     Target version: "latest", "stable", or a specific tag like "v2.6.2".
-    Default: "latest"
+    "latest"/"stable" resolve <BaseUrl>/VERSION. Default: "latest"
 
 .PARAMETER InstallDir
-    Directory to install EasyTier binaries.
-    Default: "$env:ProgramFiles\EasyTier"
+    Directory to install SDWAN binaries.
+    Default: "$env:ProgramFiles\SDWAN"
+
+.PARAMETER ReleaseBaseUrl
+    Root URL of the self-hosted release channel.
+    Defaults to the SDWAN_RELEASE_BASE_URL environment variable.
 
 .EXAMPLE
     .\install.ps1
     .\install.ps1 -Version v2.6.2
-    .\install.ps1 -InstallDir "C:\EasyTier"
+    .\install.ps1 -InstallDir "C:\SDWAN" -ReleaseBaseUrl "https://github.com/zzxym/sdwan"
 
 .NOTES
     Administrator privileges are required.
-    After installation, run: easytier-cli service install
-    to register EasyTier as a system service.
+    After installation, run: sdwan-cli service install
+    to register SDWAN as a system service.
 #>
 param(
     [Parameter(Position = 0)]
@@ -30,22 +43,48 @@ param(
     [string]$Version = 'latest',
 
     [Parameter(Position = 1)]
-    [string]$InstallDir = "$env:ProgramFiles\EasyTier"
+    [string]$InstallDir = "$env:ProgramFiles\SDWAN",
+
+    [Parameter(Position = 2)]
+    [string]$ReleaseBaseUrl = ''
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-# Force TLS 1.2+ for GitHub API and download requests
+# Force TLS 1.2+ for release channel requests
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-$GITHUB_REPO        = 'EasyTier/EasyTier'
-$GITHUB_API         = "https://api.github.com/repos/$GITHUB_REPO"
-$GITHUB_RELEASE_URL = "https://github.com/$GITHUB_REPO/releases"
+if ([string]::IsNullOrWhiteSpace($ReleaseBaseUrl)) {
+    $ReleaseBaseUrl = [Environment]::GetEnvironmentVariable('SDWAN_RELEASE_BASE_URL')
+}
+if ([string]::IsNullOrWhiteSpace($ReleaseBaseUrl)) {
+    Write-Error 'Self-hosted release channel is not configured. Set SDWAN_RELEASE_BASE_URL or pass -ReleaseBaseUrl.'
+    exit 1
+}
+$RELEASE_BASE_URL = $ReleaseBaseUrl.TrimEnd('/')
+
+$releaseToken = $env:SDWAN_RELEASE_TOKEN
+if ([string]::IsNullOrWhiteSpace($releaseToken)) { $releaseToken = $env:GITHUB_TOKEN }
+$requestHeaders = @{ 'User-Agent' = 'SDWAN-Installer/1.0' }
+if (-not [string]::IsNullOrWhiteSpace($releaseToken)) {
+    $requestHeaders['Authorization'] = "Bearer $releaseToken"
+}
+
+# A base URL such as https://github.com/<owner>/<repo> maps to that
+# repository Releases; any other URL is treated as a plain static host.
+if ($RELEASE_BASE_URL -match '^https://github[.]com/[^/]+/[^/]+/?$') {
+    $RELEASE_INDEX_URL = "$RELEASE_BASE_URL/releases/latest/download/VERSION"
+    $RELEASE_ASSET_BASE = "$RELEASE_BASE_URL/releases/download"
+}
+else {
+    $RELEASE_INDEX_URL = "$RELEASE_BASE_URL/VERSION"
+    $RELEASE_ASSET_BASE = $RELEASE_BASE_URL
+}
 
 # ---------------------------------------------------------------------------
 # Administrator check
@@ -72,62 +111,52 @@ switch ($cpuArch) {
         exit 1
     }
 }
-$assetBaseName = "easytier-windows-$arch"
+$assetBaseName = "sdwan-windows-$arch"
 
 Write-Host ''
 Write-Host '  ===============================================' -ForegroundColor Cyan
-Write-Host '        EasyTier Windows Installer              ' -ForegroundColor Cyan
+Write-Host '        SDWAN Windows Installer                 ' -ForegroundColor Cyan
 Write-Host '  ===============================================' -ForegroundColor Cyan
 Write-Host ''
 Write-Host "  Architecture : $arch" -ForegroundColor White
+Write-Host "  Channel      : $RELEASE_BASE_URL" -ForegroundColor White
 Write-Host ''
 
 # ---------------------------------------------------------------------------
 # Step 1 - Resolve release version
 # ---------------------------------------------------------------------------
-Write-Host '[1/5] Querying GitHub Release info...' -ForegroundColor Yellow
+Write-Host '[1/5] Querying self-hosted release channel...' -ForegroundColor Yellow
 
 try {
     if ($Version -eq 'latest' -or $Version -eq 'stable') {
-        $releaseInfo = Invoke-RestMethod `
-            -Uri "$GITHUB_API/releases/latest" `
-            -Headers @{ 'User-Agent' = 'EasyTier-Installer/1.0' } `
-            -ErrorAction Stop
+        $versionTag = (Invoke-WebRequest -Uri $RELEASE_INDEX_URL -UseBasicParsing `
+            -Headers $requestHeaders -ErrorAction Stop).Content.Trim()
     }
     else {
-        $tag = if ($Version -notmatch '^v') { "v$Version" } else { $Version }
-        $releaseInfo = Invoke-RestMethod `
-            -Uri "$GITHUB_API/releases/tags/$tag" `
-            -Headers @{ 'User-Agent' = 'EasyTier-Installer/1.0' } `
-            -ErrorAction Stop
+        $versionTag = if ($Version -notmatch '^v') { "v$Version" } else { $Version }
     }
 }
 catch {
-    Write-Error "Failed to fetch release info from GitHub: $_`nPlease check your network or visit $GITHUB_RELEASE_URL to download manually."
+    Write-Error "Failed to read $RELEASE_INDEX_URL : $_`nPlease check the channel or download manually from $RELEASE_BASE_URL."
     exit 1
 }
 
-$releaseVersion = $releaseInfo.tag_name
+if ($versionTag -notmatch '^v?\d+\.\d+\.\d+') {
+    Write-Error "Invalid version tag '$versionTag' returned by $RELEASE_INDEX_URL."
+    exit 1
+}
+
+$releaseVersion = $versionTag
 $assetZipName   = "$assetBaseName-$releaseVersion.zip"
 
 Write-Host "  Version : $releaseVersion" -ForegroundColor Green
 
 # ---------------------------------------------------------------------------
-# Step 2 - Find download URL
+# Step 2 - Resolve download URL
 # ---------------------------------------------------------------------------
 Write-Host ''
 Write-Host '[2/5] Resolving download URL...' -ForegroundColor Yellow
-$asset = $releaseInfo.assets |
-    Where-Object { $_.name -eq $assetZipName } |
-    Select-Object -First 1
-
-if (-not $asset) {
-    $availableAssets = ($releaseInfo.assets | Select-Object -ExpandProperty name) -join ', '
-    Write-Error "Asset '$assetZipName' not found in release $releaseVersion.`nAvailable: $availableAssets`nVisit $GITHUB_RELEASE_URL to download manually."
-    exit 1
-}
-
-$downloadUrl = $asset.browser_download_url
+$downloadUrl = "$RELEASE_ASSET_BASE/$releaseVersion/$assetZipName"
 Write-Host "  URL     : $downloadUrl" -ForegroundColor DarkGray
 
 # ---------------------------------------------------------------------------
@@ -136,18 +165,18 @@ Write-Host "  URL     : $downloadUrl" -ForegroundColor DarkGray
 Write-Host ''
 Write-Host "[3/5] Downloading $assetZipName ..." -ForegroundColor Yellow
 
-$tempDir = Join-Path $env:TEMP "easytier-install-$(Get-Random)"
+$tempDir = Join-Path $env:TEMP "sdwan-install-$(Get-Random)"
 $zipPath = Join-Path $tempDir $assetZipName
 
 New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
 
 try {
-    Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath -ErrorAction Stop
+    Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath -Headers $requestHeaders -ErrorAction Stop
     $sizeMB = [math]::Round((Get-Item $zipPath).Length / 1MB, 2)
     Write-Host "  Download complete ($sizeMB MB)" -ForegroundColor Green
 }
 catch {
-    Write-Error "Download failed: $_"
+    Write-Error "Download failed: $_`nExpected asset: $downloadUrl`nPlease check the release channel."
     Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
     exit 1
 }
@@ -225,10 +254,10 @@ catch {
 # Done
 # ---------------------------------------------------------------------------
 Write-Host ''
-Write-Host "  [OK] EasyTier $releaseVersion installation complete!" -ForegroundColor Green
+Write-Host "  [OK] SDWAN $releaseVersion installation complete!" -ForegroundColor Green
 Write-Host ''
 Write-Host "  Install dir : $InstallDir" -ForegroundColor White
-Write-Host '  User guide  : https://easytier.cn/en/guide/network/decentralized-networking.html' -ForegroundColor DarkGray
+Write-Host "  Channel     : $RELEASE_BASE_URL" -ForegroundColor DarkGray
 Write-Host ''
 Write-Host '  NOTE: If PATH was just updated, please restart your terminal.' -ForegroundColor DarkYellow
 Write-Host ''
