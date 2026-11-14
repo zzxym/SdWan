@@ -696,19 +696,15 @@ mod tests {
     }
     async fn ipv6_domain_pingpong_impl() {
         let listener = QuicTunnelListener::new("quic://[::1]:31016".parse().unwrap(), global_ctx());
-        let mut connector = QuicTunnelConnector::new(
-            "quic://test.sdwan.top:31016".parse().unwrap(),
-            global_ctx(),
-        );
+        let mut connector =
+            QuicTunnelConnector::new("quic://test.sdwan.top:31016".parse().unwrap(), global_ctx());
         connector.set_ip_version(IpVersion::V6);
         _tunnel_pingpong(listener, connector).await;
 
         let listener =
             QuicTunnelListener::new("quic://127.0.0.1:31016".parse().unwrap(), global_ctx());
-        let mut connector = QuicTunnelConnector::new(
-            "quic://test.sdwan.top:31016".parse().unwrap(),
-            global_ctx(),
-        );
+        let mut connector =
+            QuicTunnelConnector::new("quic://test.sdwan.top:31016".parse().unwrap(), global_ctx());
         connector.set_ip_version(IpVersion::V4);
         _tunnel_pingpong(listener, connector).await;
     }

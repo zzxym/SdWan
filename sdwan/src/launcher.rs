@@ -225,12 +225,7 @@ impl SdwanLauncher {
             });
 
             let notifier = data.instance_stop_notifier.clone();
-            let ret = rt.block_on(Self::sdwan_routine(
-                cfg,
-                stop_notifier,
-                api_service,
-                data,
-            ));
+            let ret = rt.block_on(Self::sdwan_routine(cfg, stop_notifier, api_service, data));
             if let Err(e) = ret {
                 error_msg.write().unwrap().replace(format!("{:?}", e));
             }

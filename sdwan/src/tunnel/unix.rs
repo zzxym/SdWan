@@ -179,17 +179,15 @@ mod tests {
     async fn unlink_on_drop() {
         let listener =
             UnixSocketTunnelListener::new("unix:///tmp/sdwan-test-exists.sock".parse().unwrap());
-        let connector = UnixSocketTunnelConnector::new(
-            "unix:///tmp/sdwan-test-exists.sock".parse().unwrap(),
-        );
+        let connector =
+            UnixSocketTunnelConnector::new("unix:///tmp/sdwan-test-exists.sock".parse().unwrap());
         _tunnel_pingpong(listener, connector).await;
 
         let mut listener =
             UnixSocketTunnelListener::new("unix:///tmp/sdwan-test-exists.sock".parse().unwrap());
         listener.set_unlink_on_drop(false);
-        let connector = UnixSocketTunnelConnector::new(
-            "unix:///tmp/sdwan-test-exists.sock".parse().unwrap(),
-        );
+        let connector =
+            UnixSocketTunnelConnector::new("unix:///tmp/sdwan-test-exists.sock".parse().unwrap());
         _tunnel_pingpong(listener, connector).await;
 
         let mut listener =

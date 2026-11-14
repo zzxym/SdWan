@@ -140,7 +140,7 @@ jobs:
 
       - name: Download and Extract Custom SDK
         run: |
-          wget https://github.com/FrankHan052176/Sdwan-OHOS-sdk/releases/download/v1/ohos-sdk.zip -O /tmp/ohos-sdk.zip
+          wget https://github.com/FrankHan052176/Easytier-OHOS-sdk/releases/download/v1/ohos-sdk.zip -O /tmp/ohos-sdk.zip
           sudo unzip -o /tmp/ohos-sdk.zip -d /tmp/custom-sdk
           sudo cp -rf /tmp/custom-sdk/linux/native/* $OHOS_NDK_HOME/native
           echo "Custom SDK files deployed to $OHOS_NDK_HOME/native"

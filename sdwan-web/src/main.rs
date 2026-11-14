@@ -20,9 +20,9 @@ use sdwan::{
     utils::panic::setup_panic_handler,
 };
 
+use mimalloc::MiMalloc;
 use sdwan::tunnel::IpScheme;
 use sdwan::utils::BoxExt;
-use mimalloc::MiMalloc;
 
 mod client_manager;
 mod db;

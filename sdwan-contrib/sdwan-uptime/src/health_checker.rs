@@ -6,13 +6,13 @@ use std::{
 
 use anyhow::Context as _;
 use dashmap::DashMap;
+use guarden::defer;
 use sdwan::{
     common::config::{
         ConfigFileControl, ConfigLoader, NetworkIdentity, PeerConfig, TomlConfigLoader,
     },
     instance_manager::NetworkInstanceManager,
 };
-use guarden::defer;
 use serde::{Deserialize, Serialize};
 use sqlx::any;
 use tokio_util::task::AbortOnDropHandle;

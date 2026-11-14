@@ -103,7 +103,7 @@ forwarded-header-value = { version = "0.1.1", optional = true }
 tokio-rustls = { version = "0.26", default-features = false, optional = true }
 
 # for tap device
-tun = { package = "tun-sdwan", git = "https://github.com/zzxym/rust-tun", features = [
+tun = { package = "tun-sdwan", git = "https://github.com/zzxym/rust-tun", rev = "6ad935ae46477ce701930be7537d00b85433435f", features = [
     "async",
 ], optional = true }
 # for net ns
@@ -230,7 +230,7 @@ prost-reflect = { version = "0.14.5", default-features = false, features = [
 ] }
 
 # for http connector
-http_req = { git = "https://github.com/zzxym/http_req.git", default-features = false, features = [
+http_req = { git = "https://github.com/zzxym/http_req.git", rev = "b10aa9fc0db3067cc3d2174683a87250b80a1ea9", default-features = false, features = [
     "rust-tls",
 ] }
 
@@ -272,7 +272,7 @@ dbus = { version = "0.9.7", features = ["vendored"] }
 which = "7.0.3"
 
 [target.'cfg(all(windows, any(target_arch = "x86_64", target_arch = "x86")))'.dependencies]
-windivert = { git = "https://github.com/zzxym/windivert-rust.git", rev = "adcc56d1550f7b5377ec2b3429f413ee24a77375", features = [
+windivert = { git = "https://github.com/zzxym/windivert-rust.git", rev = "9533a715f64105286758a7abe43e7654b143a099", features = [
     "static",
 ] }
 
@@ -325,7 +325,7 @@ sdwan-rpc-build = { path = "../sdwan-rpc-build", features = [
     "internal-namespace",
 ] }
 prost-reflect-build = { version = "0.14.0" }
-thunk-rs = { git = "https://github.com/zzxym/thunk.git", default-features = false, features = [
+thunk-rs = { git = "https://github.com/zzxym/thunk.git", rev = "cbbeec75a66b7b3cf0824ae890d9d06bcfb9d1f3", default-features = false, features = [
     "win7",
 ] }
 

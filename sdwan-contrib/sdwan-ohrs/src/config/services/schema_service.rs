@@ -1,7 +1,7 @@
-use sdwan::proto::ALL_DESCRIPTOR_BYTES;
 use napi_derive_ohos::napi;
 use once_cell::sync::Lazy;
 use prost_reflect::{Cardinality, DescriptorPool, FieldDescriptor, Kind, MessageDescriptor};
+use sdwan::proto::ALL_DESCRIPTOR_BYTES;
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]

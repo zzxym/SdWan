@@ -71,7 +71,7 @@ subtle = "2.6"
 mimalloc = { version = "*" }
 
 [build-dependencies]
-thunk-rs = { git = "https://github.com/zzxym/thunk.git", default-features = false, features = [
+thunk-rs = { git = "https://github.com/zzxym/thunk.git", rev = "cbbeec75a66b7b3cf0824ae890d9d06bcfb9d1f3", default-features = false, features = [
     "win7",
 ] }
 

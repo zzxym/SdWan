@@ -1,5 +1,5 @@
-use sdwan::proto::{api, common};
 use napi_derive_ohos::napi;
+use sdwan::proto::{api, common};
 use serde::Serialize;
 use std::collections::HashSet;
 use std::sync::Mutex;

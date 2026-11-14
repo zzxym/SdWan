@@ -1942,7 +1942,7 @@ dependencies = [
 [[package]]
 name = "http_req"
 version = "0.13.1"
-source = "git+https://github.com/zzxym/http_req.git#b10aa9fc0db3067cc3d2174683a87250b80a1ea9"
+source = "git+https://github.com/zzxym/http_req.git?rev=b10aa9fc0db3067cc3d2174683a87250b80a1ea9#b10aa9fc0db3067cc3d2174683a87250b80a1ea9"
 dependencies = [
  "base64 0.22.1",
  "rand 0.8.5",
@@ -4830,7 +4830,7 @@ dependencies = [
 [[package]]
 name = "thunk-rs"
 version = "0.3.5"
-source = "git+https://github.com/zzxym/thunk.git#cbbeec75a66b7b3cf0824ae890d9d06bcfb9d1f3"
+source = "git+https://github.com/zzxym/thunk.git?rev=cbbeec75a66b7b3cf0824ae890d9d06bcfb9d1f3#cbbeec75a66b7b3cf0824ae890d9d06bcfb9d1f3"
 
 [[package]]
 name = "time"
@@ -5203,7 +5203,7 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 [[package]]
 name = "tun-sdwan"
 version = "1.1.1"
-source = "git+https://github.com/zzxym/rust-tun#6ad935ae46477ce701930be7537d00b85433435f"
+source = "git+https://github.com/zzxym/rust-tun?rev=6ad935ae46477ce701930be7537d00b85433435f#6ad935ae46477ce701930be7537d00b85433435f"
 dependencies = [
  "bytes",
  "cfg-if",
@@ -5672,7 +5672,7 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 [[package]]
 name = "windivert"
 version = "0.6.0"
-source = "git+https://github.com/zzxym/windivert-rust.git?rev=adcc56d1550f7b5377ec2b3429f413ee24a77375#adcc56d1550f7b5377ec2b3429f413ee24a77375"
+source = "git+https://github.com/zzxym/windivert-rust.git?rev=9533a715f64105286758a7abe43e7654b143a099#9533a715f64105286758a7abe43e7654b143a099"
 dependencies = [
  "etherparse",
  "thiserror 1.0.69",
@@ -5683,7 +5683,7 @@ dependencies = [
 [[package]]
 name = "windivert-sys"
 version = "0.10.0"
-source = "git+https://github.com/zzxym/windivert-rust.git?rev=adcc56d1550f7b5377ec2b3429f413ee24a77375#adcc56d1550f7b5377ec2b3429f413ee24a77375"
+source = "git+https://github.com/zzxym/windivert-rust.git?rev=9533a715f64105286758a7abe43e7654b143a099#9533a715f64105286758a7abe43e7654b143a099"
 dependencies = [
  "cc",
  "thiserror 1.0.69",

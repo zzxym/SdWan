@@ -7,6 +7,7 @@ use std::sync::{
 };
 
 use dashmap::DashMap;
+use maxminddb::geoip2;
 use sdwan::{
     proto::{
         api::manage::WebClientService, rpc_types::controller::BaseController, web::HeartbeatRequest,
@@ -15,7 +16,6 @@ use sdwan::{
     tunnel::TunnelListener,
     web_client::security,
 };
-use maxminddb::geoip2;
 use session::{Location, Session};
 use storage::{Storage, StorageToken};
 

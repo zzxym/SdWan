@@ -2,12 +2,12 @@
 #[allow(unused_imports)]
 pub mod entity;
 
+use entity::user_running_network_configs;
 use sdwan::{
     common::config::ConfigSource,
     launcher::NetworkConfig,
     rpc_service::remote_client::{ListNetworkProps, Storage},
 };
-use entity::user_running_network_configs;
 use sea_orm::{
     ColumnTrait as _, DatabaseConnection, DbErr, EntityTrait, QueryFilter as _, Set,
     SqlxSqliteConnector, TransactionTrait as _, prelude::Expr, sea_query::OnConflict,

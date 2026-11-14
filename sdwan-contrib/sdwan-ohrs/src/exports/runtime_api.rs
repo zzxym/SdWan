@@ -9,9 +9,9 @@ use crate::runtime::state::runtime_state::{
     RuntimeAggregateState, TunAggregateState, clear_tun_attached, mark_tun_attached,
     runtime_instance_from_running_info,
 };
-use crate::{ASYNC_RUNTIME, SDWAN_VERSION, INSTANCE_MANAGER, WEB_CLIENTS};
-use sdwan::proto::api::manage::NetworkConfig;
+use crate::{ASYNC_RUNTIME, INSTANCE_MANAGER, SDWAN_VERSION, WEB_CLIENTS};
 use ohos_hilog_binding::{hilog_error, hilog_info};
+use sdwan::proto::api::manage::NetworkConfig;
 use std::sync::Arc;
 
 pub(crate) fn start_kernel(

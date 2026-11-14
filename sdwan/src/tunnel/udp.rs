@@ -1125,14 +1125,12 @@ mod tests {
     #[tokio::test]
     async fn ipv6_domain_pingpong() {
         let listener = UdpTunnelListener::new("udp://[::1]:31016".parse().unwrap());
-        let mut connector =
-            UdpTunnelConnector::new("udp://test.sdwan.top:31016".parse().unwrap());
+        let mut connector = UdpTunnelConnector::new("udp://test.sdwan.top:31016".parse().unwrap());
         connector.set_ip_version(IpVersion::V6);
         _tunnel_pingpong(listener, connector).await;
 
         let listener = UdpTunnelListener::new("udp://127.0.0.1:31016".parse().unwrap());
-        let mut connector =
-            UdpTunnelConnector::new("udp://test.sdwan.top:31016".parse().unwrap());
+        let mut connector = UdpTunnelConnector::new("udp://test.sdwan.top:31016".parse().unwrap());
         connector.set_ip_version(IpVersion::V4);
         _tunnel_pingpong(listener, connector).await;
     }

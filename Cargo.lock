@@ -3605,6 +3605,7 @@ dependencies = [
 [[package]]
 name = "http_req"
 version = "0.13.1"
+source = "git+https://github.com/zzxym/http_req.git?rev=b10aa9fc0db3067cc3d2174683a87250b80a1ea9#b10aa9fc0db3067cc3d2174683a87250b80a1ea9"
 dependencies = [
  "base64 0.22.1",
  "rand 0.8.5",
@@ -4326,6 +4327,7 @@ dependencies = [
 [[package]]
 name = "kcp-sys"
 version = "0.1.0"
+source = "git+https://github.com/zzxym/kcp-sys?rev=94964794caaed5d388463137da59b97499619e5f#94964794caaed5d388463137da59b97499619e5f"
 dependencies = [
  "anyhow",
  "auto_impl",
@@ -8441,6 +8443,7 @@ dependencies = [
 [[package]]
 name = "service-manager"
 version = "0.8.0"
+source = "git+https://github.com/zzxym/service-manager-rs.git?branch=main#5eb28f7a686858eea4f4933534ed989d3b71dc2a"
 dependencies = [
  "cfg-if",
  "dirs 4.0.0",
@@ -8629,6 +8632,7 @@ dependencies = [
 [[package]]
 name = "smoltcp"
 version = "0.12.0"
+source = "git+https://github.com/zzxym/smoltcp.git?rev=0a926767a68bc88d5512afefa7529c5ecdade4ea#0a926767a68bc88d5512afefa7529c5ecdade4ea"
 dependencies = [
  "bitflags 1.3.2",
  "byteorder",
@@ -9678,6 +9682,7 @@ dependencies = [
 [[package]]
 name = "thunk-rs"
 version = "0.3.5"
+source = "git+https://github.com/zzxym/thunk.git?rev=cbbeec75a66b7b3cf0824ae890d9d06bcfb9d1f3#cbbeec75a66b7b3cf0824ae890d9d06bcfb9d1f3"
 
 [[package]]
 name = "tiff"
@@ -10366,6 +10371,7 @@ checksum = "7b3e06c9b9d80ed6b745c7159c40b311ad2916abb34a49e9be2653b90db0d8dd"
 [[package]]
 name = "tun-sdwan"
 version = "1.1.1"
+source = "git+https://github.com/zzxym/rust-tun?rev=6ad935ae46477ce701930be7537d00b85433435f#6ad935ae46477ce701930be7537d00b85433435f"
 dependencies = [
  "bytes",
  "cfg-if",
@@ -11181,6 +11187,7 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 [[package]]
 name = "windivert"
 version = "0.6.0"
+source = "git+https://github.com/zzxym/windivert-rust.git?rev=9533a715f64105286758a7abe43e7654b143a099#9533a715f64105286758a7abe43e7654b143a099"
 dependencies = [
  "etherparse",
  "thiserror 1.0.63",
@@ -11191,6 +11198,7 @@ dependencies = [
 [[package]]
 name = "windivert-sys"
 version = "0.10.0"
+source = "git+https://github.com/zzxym/windivert-rust.git?rev=9533a715f64105286758a7abe43e7654b143a099#9533a715f64105286758a7abe43e7654b143a099"
 dependencies = [
  "cc",
  "thiserror 1.0.63",

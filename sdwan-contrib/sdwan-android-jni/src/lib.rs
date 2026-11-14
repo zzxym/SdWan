@@ -1,8 +1,8 @@
-use sdwan::proto::api::manage::{NetworkInstanceRunningInfo, NetworkInstanceRunningInfoMap};
 use jni::JNIEnv;
 use jni::objects::{JClass, JObjectArray, JString};
 use jni::sys::{jint, jstring};
 use once_cell::sync::Lazy;
+use sdwan::proto::api::manage::{NetworkInstanceRunningInfo, NetworkInstanceRunningInfoMap};
 use std::ffi::{CStr, CString};
 use std::ptr;
 

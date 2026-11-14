@@ -29,28 +29,4 @@ codegen-units = 1
 opt-level = 3
 strip = true
 
-# region 本地化外部源码依赖（自建发布渠道，构建不再依赖上游 GitHub）
-# 各仓库位于本仓库上级目录，commit 与 Cargo.lock 锁定 rev 一致
-
-[patch."https://github.com/zzxym/rust-tun"]
-tun-sdwan = { path = "../rust-tun" }
-
-[patch."https://github.com/zzxym/kcp-sys"]
-kcp-sys = { path = "../kcp-sys" }
-
-[patch."https://github.com/zzxym/http_req.git"]
-http_req = { path = "../http_req" }
-
-[patch."https://github.com/zzxym/service-manager-rs.git"]
-service-manager = { path = "../service-manager-rs" }
-
-[patch."https://github.com/zzxym/windivert-rust.git"]
-windivert = { path = "../windivert-rust/windivert" }
-
-[patch."https://github.com/zzxym/thunk.git"]
-thunk-rs = { path = "../thunk/thunk-rs" }
-
-[patch."https://github.com/zzxym/smoltcp.git"]
-smoltcp = { path = "../smoltcp" }
-
-# endregion
+# 外部源码依赖统一使用 zzxym 远程仓库（git URL 声明于各 crate 的 Cargo.toml）
