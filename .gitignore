@@ -43,3 +43,7 @@ sdwan-gui/src-tauri/*.sys
 
 .direnv
 .flake-profile
+
+# Android signing credentials (injected from GitHub Secrets in CI)
+sdwan-gui/src-tauri/gen/android/keystore.properties
+sdwan-gui/src-tauri/gen/android/app/upload-keystore.jks

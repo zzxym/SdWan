@@ -60,6 +60,22 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Setup Android signing (GitHub Secrets)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_BASE64}" ] || [ -z "${ANDROID_KEYSTORE_PASSWORD}" ]; then
+            echo "::error::Missing ANDROID_KEYSTORE_BASE64 or ANDROID_KEYSTORE_PASSWORD secrets"
+            exit 1
+          fi
+          mkdir -p sdwan-gui/src-tauri/gen/android/app
+          echo "${ANDROID_KEYSTORE_BASE64}" | base64 -d > sdwan-gui/src-tauri/gen/android/app/upload-keystore.jks
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=upload\nstoreFile=upload-keystore.jks\n' \
+            "${ANDROID_KEYSTORE_PASSWORD}" "${ANDROID_KEYSTORE_PASSWORD}" \
+            > sdwan-gui/src-tauri/gen/android/keystore.properties
+
       - name: Set current ref as env variable
         run: |
           echo "GIT_DESC=$(git log -1 --format=%cd.%h --date=format:%Y-%m-%d_%H:%M:%S)" >> $GITHUB_ENV
