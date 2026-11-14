@@ -1003,12 +1003,12 @@ pub mod tests {
         let config = TomlConfigLoader::default();
         let global_ctx = GlobalCtx::new(config);
         let public_ipv6 = "2001:db8::2/64".parse().unwrap();
-        let listener: url::Url = "tcp://[2001:db8::2]:11010".parse().unwrap();
+        let listener: url::Url = "tcp://[2001:db8::2]:10010".parse().unwrap();
         global_ctx.set_public_ipv6_lease(Some(public_ipv6));
         global_ctx.add_running_listener(listener);
 
         let ip = std::net::IpAddr::V6(public_ipv6.address());
-        let socket = SocketAddr::from((public_ipv6.address(), 11010));
+        let socket = SocketAddr::from((public_ipv6.address(), 10010));
 
         assert!(global_ctx.is_ip_local_virtual_ip(&ip));
         assert!(global_ctx.should_deny_proxy(&socket, false));

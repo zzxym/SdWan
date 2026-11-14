@@ -11,10 +11,10 @@ network = "my_sdwan_network"
 # network_secret = "your_secret_key_here"
 
 # 监听地址 (可选)
-# listeners = ["tcp://0.0.0.0:11010", "udp://0.0.0.0:11010"]
+# listeners = ["tcp://0.0.0.0:10010", "udp://0.0.0.0:10010"]
 
 # 对等节点地址 (可选)
-# peers = ["tcp://peer1.example.com:11010", "udp://peer2.example.com:11010"]
+# peers = ["tcp://peer1.example.com:10010", "udp://peer2.example.com:10010"]
 
 # 虚拟 IP 地址 (可选)
 # ipv4 = "10.144.144.1"

@@ -85,7 +85,7 @@ curl -s -X POST http://localhost:8080/api/nodes \
   -d '{
     "name": "Test Node",
     "host": "127.0.0.1",
-    "port": 11010,
+    "port": 10010,
     "protocol": "tcp",
     "version": "1.0.0",
     "description": "Test node for integration testing",

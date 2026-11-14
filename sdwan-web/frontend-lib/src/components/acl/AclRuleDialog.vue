@@ -86,13 +86,13 @@ const genericSuggestions = ref<string[]>([])
             <label class="font-bold">{{ t('acl.rule.src_ips') }}</label>
             <AutoComplete v-model="rule.source_ips" multiple fluid :suggestions="genericSuggestions"
               @complete="genericSuggestions = [$event.query]"
-              :placeholder="t('chips_placeholder', ['10.126.126.0/24'])" />
+              :placeholder="t('chips_placeholder', ['172.31.0.0/24'])" />
           </div>
           <div class="flex flex-col gap-2">
             <label class="font-bold">{{ t('acl.rule.dst_ips') }}</label>
             <AutoComplete v-model="rule.destination_ips" multiple fluid :suggestions="genericSuggestions"
               @complete="genericSuggestions = [$event.query]"
-              :placeholder="t('chips_placeholder', ['10.126.126.2/32'])" />
+              :placeholder="t('chips_placeholder', ['172.31.0.2/32'])" />
           </div>
 
           <div v-if="showPorts" class="flex flex-row gap-4 flex-wrap">

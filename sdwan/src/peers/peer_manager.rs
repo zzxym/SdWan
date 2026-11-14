@@ -2222,9 +2222,9 @@ mod tests {
     #[test]
     fn ipv4_broadcast_peer_selection_skips_peers_without_ipv4() {
         let routes = vec![
-            route_with_ipv4(1, Some(std::net::Ipv4Addr::new(10, 126, 126, 1))),
+            route_with_ipv4(1, Some(std::net::Ipv4Addr::new(172, 31, 0, 1))),
             route_with_ipv4(2, None),
-            route_with_ipv4(3, Some(std::net::Ipv4Addr::new(10, 126, 126, 3))),
+            route_with_ipv4(3, Some(std::net::Ipv4Addr::new(172, 31, 0, 3))),
             route_with_ipv4(4, None),
         ];
 

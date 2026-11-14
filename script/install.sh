@@ -272,17 +272,17 @@ INIT() {
 instance_name = "default"
 dhcp = true
 listeners = [
-    "tcp://0.0.0.0:11010",
-    "udp://0.0.0.0:11010",
-    "wg://0.0.0.0:11011",
-    "ws://0.0.0.0:11011/",
-    "wss://0.0.0.0:11012/",
+    "tcp://0.0.0.0:10010",
+    "udp://0.0.0.0:10010",
+    "wg://0.0.0.0:10011",
+    "ws://0.0.0.0:10011/",
+    "wss://0.0.0.0:10012/",
 ]
 exit_nodes = []
 rpc_portal = "0.0.0.0:0"
 
 [[peer]]
-uri = "tcp://public.sdwan.top:11010"
+uri = "tcp://public.sdwan.top:10010"
 
 [network_identity]
 network_name = "default"
@@ -379,7 +379,7 @@ EOF
 SUCCESS() {
   clear
   echo " Install SDWAN successfully!"
-  echo -e "\r\nDefault Port: ${GREEN_COLOR}11010(UDP+TCP)${RES}, Notice allowing in firewall!\r\n"
+  echo -e "\r\nDefault Port: ${GREEN_COLOR}10010(UDP+TCP)${RES}, Notice allowing in firewall!\r\n"
   echo -e "Default Network Name: ${GREEN_COLOR}default${RES}, Please change it to your own network name!\r\n"
 
   echo -e "Now SDWAN supports multiple config files. You can create config files in the ${GREEN_COLOR}${INSTALL_PATH}/config/${RES} folder"

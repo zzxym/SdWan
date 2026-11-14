@@ -319,7 +319,7 @@ mod tests {
         global_ctx.set_public_ipv6_routes(BTreeSet::from([public_route]));
 
         let ret =
-            create_connector_by_url("tcp://[2001:db8::2]:11010", &global_ctx, IpVersion::V6).await;
+            create_connector_by_url("tcp://[2001:db8::2]:10010", &global_ctx, IpVersion::V6).await;
 
         assert!(matches!(
             ret,

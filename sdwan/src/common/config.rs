@@ -31,7 +31,7 @@ pub type Flags = crate::proto::common::FlagsInConfig;
 pub fn gen_default_flags() -> Flags {
     #[allow(deprecated)]
     Flags {
-        default_protocol: "tcp".to_string(),
+        default_protocol: "udp".to_string(),
         dev_name: "".to_string(),
         enable_encryption: true,
         enable_ipv6: true,
@@ -1266,7 +1266,7 @@ pub mod tests {
         assert!(stun_servers.is_none());
 
         // Test setting custom stun servers
-        let custom_servers = vec!["txt:stun.sdwan.cn".to_string()];
+        let custom_servers = vec!["txt:stun.easytier.cn".to_string()];
         config.set_stun_servers(Some(custom_servers.clone()));
 
         let retrieved_servers = config.get_stun_servers();
@@ -1280,7 +1280,7 @@ instance_name = "test"
 stun_servers = [
     "stun.l.google.com:19302",
     "stun1.l.google.com:19302",
-    "txt:stun.sdwan.cn"
+    "txt:stun.easytier.cn"
 ]"#;
 
         let config = TomlConfigLoader::new_from_str(config_str).unwrap();
@@ -1289,7 +1289,7 @@ stun_servers = [
         assert_eq!(stun_servers.len(), 3);
         assert_eq!(stun_servers[0], "stun.l.google.com:19302");
         assert_eq!(stun_servers[1], "stun1.l.google.com:19302");
-        assert_eq!(stun_servers[2], "txt:stun.sdwan.cn");
+        assert_eq!(stun_servers[2], "txt:stun.easytier.cn");
     }
 
     #[test]
@@ -1454,7 +1454,7 @@ source = "user"
 instance_name = "default"
 instance_id = "87ede5a2-9c3d-492d-9bbe-989b9d07e742"
 ipv4 = "10.144.144.10"
-listeners = [ "tcp://0.0.0.0:11010", "udp://0.0.0.0:11010" ]
+listeners = [ "tcp://0.0.0.0:10010", "udp://0.0.0.0:10010" ]
 routes = [ "192.168.0.0/16" ]
 
 [network_identity]
@@ -1462,10 +1462,10 @@ network_name = "default"
 network_secret = ""
 
 [[peer]]
-uri = "tcp://public.kkrainbow.top:11010"
+uri = "tcp://public.kkrainbow.top:10010"
 
 [[peer]]
-uri = "udp://192.168.94.33:11010"
+uri = "udp://192.168.94.33:10010"
 
 [[proxy_network]]
 cidr = "10.147.223.0/24"
@@ -1484,8 +1484,8 @@ dir = "/tmp/sdwan"
 level = "warn"
 
 [[port_forward]]
-bind_addr = "0.0.0.0:11011"
-dst_addr = "192.168.94.33:11011"
+bind_addr = "0.0.0.0:10011"
+dst_addr = "192.168.94.33:10011"
 proto = "tcp"
 "#;
         let ret = TomlConfigLoader::new_from_str(config_str);
@@ -1500,7 +1500,7 @@ proto = "tcp"
         assert_eq!("10.144.144.10/24", ret.get_ipv4().unwrap().to_string());
 
         assert_eq!(
-            vec!["tcp://0.0.0.0:11010", "udp://0.0.0.0:11010"],
+            vec!["tcp://0.0.0.0:10010", "udp://0.0.0.0:10010"],
             ret.get_listener_uris()
                 .iter()
                 .map(|u| u.to_string())
@@ -1509,8 +1509,8 @@ proto = "tcp"
 
         assert_eq!(
             vec![PortForwardConfig {
-                bind_addr: "0.0.0.0:11011".parse().unwrap(),
-                dst_addr: "192.168.94.33:11011".parse().unwrap(),
+                bind_addr: "0.0.0.0:10011".parse().unwrap(),
+                dst_addr: "192.168.94.33:10011".parse().unwrap(),
                 proto: "tcp".to_string(),
             }],
             ret.get_port_forwards()
@@ -1757,8 +1757,8 @@ network_secret = "${INSTANCE_SECRET}"
         // 设置各种实际场景的环境变量
         set_env_var("ET_SECRET", "production-secret-key");
         set_env_var("PEER_HOST", "peer.example.com");
-        set_env_var("PEER_PORT", "11011");
-        set_env_var("LISTEN_PORT", "11010");
+        set_env_var("PEER_PORT", "10011");
+        set_env_var("LISTEN_PORT", "10010");
         set_env_var("NETWORK_NAME", "prod-network");
 
         // 创建包含多个实际字段的完整配置
@@ -1795,12 +1795,12 @@ uri = "tcp://${PEER_HOST}:${PEER_PORT}"
         // 验证 listeners 字段
         let listeners = config.get_listener_uris();
         assert_eq!(listeners.len(), 1);
-        assert_eq!(listeners[0].to_string(), "tcp://0.0.0.0:11010");
+        assert_eq!(listeners[0].to_string(), "tcp://0.0.0.0:10010");
 
         // 验证 peer 字段
         let peers = config.get_peers();
         assert_eq!(peers.len(), 1);
-        assert_eq!(peers[0].uri.to_string(), "tcp://peer.example.com:11011");
+        assert_eq!(peers[0].uri.to_string(), "tcp://peer.example.com:10011");
 
         // 验证配置被正确标记
         assert!(control.is_read_only());
@@ -1827,7 +1827,7 @@ uri = "tcp://${PEER_HOST}:${PEER_PORT}"
         let mut temp_file = NamedTempFile::new().unwrap();
         let config_content = r#"
 instance_name = "default-test"
-listeners = ["tcp://0.0.0.0:${UNDEFINED_PORT:-11010}"]
+listeners = ["tcp://0.0.0.0:${UNDEFINED_PORT:-10010}"]
 
 [network_identity]
 network_name = "test"
@@ -1853,7 +1853,7 @@ network_secret = "${UNDEFINED_SECRET:-default-secret}"
         );
         assert_eq!(
             config.get_listener_uris()[0].to_string(),
-            "tcp://0.0.0.0:11010"
+            "tcp://0.0.0.0:10010"
         );
     }
 

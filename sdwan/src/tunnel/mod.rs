@@ -337,7 +337,7 @@ impl IpScheme {
             Self::Ws => 80,
             #[cfg(feature = "websocket")]
             Self::Wss => 443,
-            _ => 11010 + self.port_offset(),
+            _ => 10010 + self.port_offset(),
         }
     }
 }
@@ -405,14 +405,14 @@ mod tests {
 
     #[test]
     fn matches_scheme_accepts_owned_url() {
-        let url: url::Url = "udp://[2001:db8::1]:11010".parse().unwrap();
+        let url: url::Url = "udp://[2001:db8::1]:10010".parse().unwrap();
 
         assert!(matches_scheme!(url, TunnelScheme::Ip(IpScheme::Udp)));
     }
 
     #[test]
     fn matches_scheme_accepts_borrowed_url() {
-        let url: url::Url = "udp://[2001:db8::1]:11010".parse().unwrap();
+        let url: url::Url = "udp://[2001:db8::1]:10010".parse().unwrap();
 
         assert!(matches_scheme!(&url, TunnelScheme::Ip(IpScheme::Udp)));
     }

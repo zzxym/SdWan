@@ -38,13 +38,13 @@ const curNetwork = defineModel('curNetwork', {
 const { t } = useI18n()
 
 const protos: { [proto: string]: number } = {
-  tcp: 11010,
-  udp: 11010,
-  wg: 11011,
-  ws: 11011,
-  wss: 11012,
-  quic: 11012,
-  faketcp: 11013,
+  tcp: 10010,
+  udp: 10010,
+  wg: 10011,
+  ws: 10011,
+  wss: 10012,
+  quic: 10012,
+  faketcp: 10013,
   http: 80,
   https: 443,
   txt: 0,
@@ -233,7 +233,7 @@ watch(() => curNetwork.value, syncNormalizedNetwork, { immediate: true, deep: fa
                   </div>
                   <div class="items-center flex flex-col p-fluid gap-y-2">
                     <UrlListInput id="initial_nodes" v-model="curNetwork.peer_urls" :protos="protos"
-                      defaultUrl="tcp://:11010" :add-label="t('add_initial_node')"
+                      defaultUrl="tcp://:10010" :add-label="t('add_initial_node')"
                       :placeholder="t('initial_node_placeholder')" />
                   </div>
                 </div>

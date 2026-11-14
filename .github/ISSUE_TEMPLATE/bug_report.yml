@@ -64,7 +64,7 @@ body:
         
         **节点 B 配置 / Node B Config:**
         ```
-        sdwan-core --ipv4 10.1.1.2 --peers tcp://1.2.3.4:11010
+        sdwan-core --ipv4 10.1.1.2 --peers tcp://1.2.3.4:10010
         ```
         
         请贴出完整的配置文件内容或命令行参数

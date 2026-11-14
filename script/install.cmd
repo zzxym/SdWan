@@ -637,7 +637,7 @@ SDWAN 服务管理脚本
         install.cmd -ConfigType Remote -ServiceName SDWANService
 
     3. 使用命令行传参: 
-        install.cmd -ConfigType CLI --ipv4 x.x.x.x --network-name xxx --network-secret yyy --peers tcp://peer_host:11010
+        install.cmd -ConfigType CLI --ipv4 x.x.x.x --network-name xxx --network-secret yyy --peers tcp://peer_host:10010
 
     4. 使用自己的 GitHub 仓库作为发布渠道更新: 
         install.cmd -Update -ReleaseBaseUrl https://github.com/zzxym/sdwan

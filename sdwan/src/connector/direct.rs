@@ -840,7 +840,7 @@ mod tests {
 
     #[test]
     fn udp_ipv6_url_matches_hole_punch_branch_condition() {
-        let remote_url: url::Url = "udp://[2001:db8::1]:11010".parse().unwrap();
+        let remote_url: url::Url = "udp://[2001:db8::1]:10010".parse().unwrap();
         let takes_udp_ipv6_hole_punch_branch =
             matches_scheme!(remote_url, TunnelScheme::Ip(IpScheme::Udp))
                 && matches!(remote_url.host(), Some(url::Host::Ipv6(_)));
@@ -860,11 +860,11 @@ mod tests {
         );
         assert_eq!(
             mapped_listener_port(&"tcp://127.0.0.1".parse().unwrap()),
-            Some(11010)
+            Some(10010)
         );
         assert_eq!(
             mapped_listener_port(&"udp://127.0.0.1".parse().unwrap()),
-            Some(11010)
+            Some(10010)
         );
     }
 
@@ -883,7 +883,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             tcp_addrs,
-            vec![SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 11010)]
+            vec![SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 10010)]
         );
     }
 

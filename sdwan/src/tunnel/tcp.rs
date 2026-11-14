@@ -230,8 +230,8 @@ mod tests {
 
     #[tokio::test]
     async fn tcp_bench_with_bind() {
-        let listener = TcpTunnelListener::new("tcp://127.0.0.1:11013".parse().unwrap());
-        let mut connector = TcpTunnelConnector::new("tcp://127.0.0.1:11013".parse().unwrap());
+        let listener = TcpTunnelListener::new("tcp://127.0.0.1:10013".parse().unwrap());
+        let mut connector = TcpTunnelConnector::new("tcp://127.0.0.1:10013".parse().unwrap());
         connector.set_bind_addrs(vec!["127.0.0.1:0".parse().unwrap()]);
         _tunnel_pingpong(listener, connector).await
     }

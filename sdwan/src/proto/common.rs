@@ -548,26 +548,26 @@ mod tests {
     #[test]
     fn normalize_plain_ipv6_tunnel_url() {
         let url = Url {
-            url: "tcp://[2001:db8::1]:11010".to_string(),
+            url: "tcp://[2001:db8::1]:10010".to_string(),
         };
 
         assert_eq!(
             url.normalized_tunnel_display(),
-            "tcp6://[2001:db8::1]:11010"
+            "tcp6://[2001:db8::1]:10010"
         );
         assert!(url.is_ipv6_tunnel_endpoint());
     }
 
     #[test]
     fn normalize_all_enabled_ipv6_tunnel_urls() {
-        assert_ipv6_tunnel_normalization("tcp", 11010);
-        assert_ipv6_tunnel_normalization("udp", 11010);
+        assert_ipv6_tunnel_normalization("tcp", 10010);
+        assert_ipv6_tunnel_normalization("udp", 10010);
 
         #[cfg(feature = "wireguard")]
-        assert_ipv6_tunnel_normalization("wg", 11011);
+        assert_ipv6_tunnel_normalization("wg", 10011);
 
         #[cfg(feature = "quic")]
-        assert_ipv6_tunnel_normalization("quic", 11012);
+        assert_ipv6_tunnel_normalization("quic", 10012);
 
         #[cfg(feature = "websocket")]
         assert_ipv6_tunnel_normalization("ws", 80);
@@ -576,30 +576,30 @@ mod tests {
         assert_ipv6_tunnel_normalization("wss", 443);
 
         #[cfg(feature = "faketcp")]
-        assert_ipv6_tunnel_normalization("faketcp", 11013);
+        assert_ipv6_tunnel_normalization("faketcp", 10013);
     }
 
     #[test]
     fn normalize_composite_ipv6_tunnel_url() {
         assert_eq!(
-            normalize_tunnel_url("txt-tcp://[2001:db8::1]:11010", None).as_deref(),
-            Some("txt-tcp6://[2001:db8::1]:11010")
+            normalize_tunnel_url("txt-tcp://[2001:db8::1]:10010", None).as_deref(),
+            Some("txt-tcp6://[2001:db8::1]:10010")
         );
     }
 
     #[test]
     fn recover_malformed_composite_ipv6_tunnel_url() {
         assert_eq!(
-            normalize_tunnel_url("txt-tcp://[2001:db8::1]:110106", None).as_deref(),
-            Some("txt-tcp6://[2001:db8::1]:11010")
+            normalize_tunnel_url("txt-tcp://[2001:db8::1]:100106", None).as_deref(),
+            Some("txt-tcp6://[2001:db8::1]:10010")
         );
     }
 
     #[test]
     fn keep_normalized_ipv6_tunnel_url_stable() {
         assert_eq!(
-            normalize_tunnel_url("tcp6://[2001:db8::1]:11010", None).as_deref(),
-            Some("tcp6://[2001:db8::1]:11010")
+            normalize_tunnel_url("tcp6://[2001:db8::1]:10010", None).as_deref(),
+            Some("tcp6://[2001:db8::1]:10010")
         );
     }
 
@@ -614,15 +614,15 @@ mod tests {
     #[test]
     fn keep_domain_host_unbracketed_when_ipv6_falls_back() {
         assert_eq!(
-            normalize_tunnel_url("tcp://localhost:11010", Some(true)).as_deref(),
-            Some("tcp6://localhost:11010")
+            normalize_tunnel_url("tcp://localhost:10010", Some(true)).as_deref(),
+            Some("tcp6://localhost:10010")
         );
     }
 
     #[test]
     fn tunnel_info_display_tunnel_type_preserves_composite_prefix() {
         let tunnel = TunnelInfo {
-            tunnel_type: "txt-tcp://[2001:db8::2]:110106".to_string(),
+            tunnel_type: "txt-tcp://[2001:db8::2]:100106".to_string(),
             local_addr: None,
             remote_addr: Some(Url {
                 url: "txt://et.example.com".to_string(),
@@ -632,7 +632,7 @@ mod tests {
 
         assert_eq!(
             tunnel.display_tunnel_type(),
-            "txt-tcp6://[2001:db8::2]:11010"
+            "txt-tcp6://[2001:db8::2]:10010"
         );
     }
 
@@ -642,7 +642,7 @@ mod tests {
             tunnel_type: "tcp".to_string(),
             local_addr: None,
             remote_addr: Some(Url {
-                url: "tcp://[2001:db8::2]:11010".to_string(),
+                url: "tcp://[2001:db8::2]:10010".to_string(),
             }),
             resolved_remote_addr: None,
         };
@@ -650,7 +650,7 @@ mod tests {
         assert_eq!(tunnel.display_tunnel_type(), "tcp6");
         assert_eq!(
             tunnel.display_remote_addr().as_deref(),
-            Some("tcp6://[2001:db8::2]:11010")
+            Some("tcp6://[2001:db8::2]:10010")
         );
     }
 
@@ -663,18 +663,18 @@ mod tests {
                 url: "txt://et.example.com".to_string(),
             }),
             resolved_remote_addr: Some(Url {
-                url: "tcp://[2001:db8::3]:11010".to_string(),
+                url: "tcp://[2001:db8::3]:10010".to_string(),
             }),
         };
 
         assert_eq!(tunnel.display_tunnel_type(), "txt-tcp6");
         assert_eq!(
             tunnel.display_remote_addr().as_deref(),
-            Some("tcp6://[2001:db8::3]:11010")
+            Some("tcp6://[2001:db8::3]:10010")
         );
         assert_eq!(
             tunnel.effective_remote_addr().map(|url| url.url.as_str()),
-            Some("tcp://[2001:db8::3]:11010")
+            Some("tcp://[2001:db8::3]:10010")
         );
     }
 }

@@ -222,7 +222,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_txt() {
-        let url = "txt://txt.sdwan.cn";
+        let url = "txt://txt.easytier.cn";
         let global_ctx = get_mock_global_ctx();
         let mut connector = DnsTunnelConnector::new(url.parse().unwrap(), global_ctx);
         connector.set_ip_version(IpVersion::V4);
@@ -241,7 +241,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_srv() {
-        let url = "srv://sdwan.cn";
+        let url = "srv://easytier.cn";
         let global_ctx = get_mock_global_ctx();
         let mut connector = DnsTunnelConnector::new(url.parse().unwrap(), global_ctx);
         connector.set_ip_version(IpVersion::V4);

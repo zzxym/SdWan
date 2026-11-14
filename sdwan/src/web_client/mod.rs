@@ -242,7 +242,7 @@ pub async fn run_web_client(
         .with_context(|| "failed to resolve machine id for web client")?;
     let config_server_url = match Url::parse(config_server_url_s) {
         Ok(u) => u,
-        Err(_) => format!("udp://config-server.sdwan.cn:22020/{}", config_server_url_s)
+        Err(_) => format!("udp://oa.xiaolin.cc:22020/{}", config_server_url_s)
             .parse()
             .with_context(|| "failed to parse config server URL")?,
     };

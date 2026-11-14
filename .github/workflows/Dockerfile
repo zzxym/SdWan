@@ -32,14 +32,14 @@ COPY --from=builder --chmod=755 /tmp/output/* /usr/local/bin
 ENV TZ=Asia/Shanghai
 
 # tcp
-EXPOSE 11010/tcp
+EXPOSE 10010/tcp
 # udp
-EXPOSE 11010/udp
+EXPOSE 10010/udp
 # wg
-EXPOSE 11011/udp
+EXPOSE 10011/udp
 # ws
-EXPOSE 11011/tcp
+EXPOSE 10011/tcp
 # wss
-EXPOSE 11012/tcp
+EXPOSE 10012/tcp
 
 ENTRYPOINT ["/sbin/tini", "--", "sdwan-core"]

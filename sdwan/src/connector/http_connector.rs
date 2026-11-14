@@ -78,9 +78,9 @@ impl HttpTunnelConnector {
         url_str: &str,
     ) -> Result<Box<dyn TunnelConnector>, Error> {
         // the url should be in following format:
-        // 1: http(s)://sdwan.cn/?url=tcp://10.147.22.22:11010 (scheme is http, domain is ignored, path is splitted into proto type and addr)
-        // 2: http(s)://tcp://10.137.22.22:11010 (connector url is appended to the scheme)
-        // 3: tcp://10.137.22.22:11010 (scheme is protocol type, the url is used to construct a connector directly)
+        // 1: http(s)://sdwan.cn/?url=tcp://10.147.22.22:10010 (scheme is http, domain is ignored, path is splitted into proto type and addr)
+        // 2: http(s)://tcp://10.137.22.22:10010 (connector url is appended to the scheme)
+        // 3: tcp://10.137.22.22:10010 (scheme is protocol type, the url is used to construct a connector directly)
         tracing::info!("redirect to {}", new_url);
         let url = url::Url::parse(new_url.as_str())
             .with_context(|| format!("parsing redirect url failed. url: {}", new_url))?;
@@ -129,8 +129,8 @@ impl HttpTunnelConnector {
         body: &String,
     ) -> Result<Box<dyn TunnelConnector>, Error> {
         // resp body should be line of connector urls, like:
-        // tcp://10.1.1.1:11010
-        // udp://10.1.1.1:11010
+        // tcp://10.1.1.1:10010
+        // udp://10.1.1.1:10010
         let mut lines = body
             .lines()
             .map(|line| line.trim())

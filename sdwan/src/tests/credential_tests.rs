@@ -190,8 +190,8 @@ fn create_admin_config(
     config.set_ipv4(Some(ipv4.parse().unwrap()));
     config.set_ipv6(Some(ipv6.parse().unwrap()));
     config.set_listeners(vec![
-        "tcp://0.0.0.0:11010".parse().unwrap(),
-        "udp://0.0.0.0:11010".parse().unwrap(),
+        "tcp://0.0.0.0:10010".parse().unwrap(),
+        "udp://0.0.0.0:10010".parse().unwrap(),
     ]);
     config.set_network_identity(NetworkIdentity::new(
         "test_network".to_string(),
@@ -214,8 +214,8 @@ fn create_shared_config(
     config.set_ipv4(Some(ipv4.parse().unwrap()));
     config.set_ipv6(Some(ipv6.parse().unwrap()));
     config.set_listeners(vec![
-        "tcp://0.0.0.0:11010".parse().unwrap(),
-        "udp://0.0.0.0:11010".parse().unwrap(),
+        "tcp://0.0.0.0:10010".parse().unwrap(),
+        "udp://0.0.0.0:10010".parse().unwrap(),
     ]);
     config.set_network_identity(NetworkIdentity::new(
         "shared_network".to_string(),
@@ -230,7 +230,7 @@ fn create_public_server_config() -> TomlConfigLoader {
     config.set_inst_name(PUBLIC_SERVER_NETWORK_NAME.to_string());
     config.set_hostname(Some("public-server".to_string()));
     config.set_netns(Some("ns_adm".to_string()));
-    config.set_listeners(vec!["udp://0.0.0.0:11010".parse().unwrap()]);
+    config.set_listeners(vec!["udp://0.0.0.0:10010".parse().unwrap()]);
     config.set_network_identity(NetworkIdentity::new(
         PUBLIC_SERVER_NETWORK_NAME.to_string(),
         PUBLIC_SERVER_SHARED_SECRET.to_string(),
@@ -416,7 +416,7 @@ async fn credential_peers_p2p_to_need_p2p_admin_through_public_server(
     admin_inst
         .get_conn_manager()
         .add_connector(UdpTunnelConnector::new(
-            "udp://10.1.1.1:11010".parse().unwrap(),
+            "udp://10.1.1.1:10010".parse().unwrap(),
         ));
 
     wait_foreign_network_count(&public_server_inst, 1, Duration::from_secs(10)).await;
@@ -477,12 +477,12 @@ async fn credential_peers_p2p_to_need_p2p_admin_through_public_server(
     credential_a_inst
         .get_conn_manager()
         .add_connector(UdpTunnelConnector::new(
-            "udp://10.1.1.1:11010".parse().unwrap(),
+            "udp://10.1.1.1:10010".parse().unwrap(),
         ));
     credential_b_inst
         .get_conn_manager()
         .add_connector(UdpTunnelConnector::new(
-            "udp://10.1.1.1:11010".parse().unwrap(),
+            "udp://10.1.1.1:10010".parse().unwrap(),
         ));
 
     let admin_peer_id = admin_inst.peer_id();
@@ -745,7 +745,7 @@ async fn credential_basic_connectivity() {
     cred_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
 
     let cred_peer_id = cred_inst.peer_id();
@@ -943,17 +943,17 @@ async fn credential_relay_capability(#[case] allow_relay: bool) {
     cred_a_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
     cred_b_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
     cred_c_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
 
     // A and B also connect to C (simulating P2P discovery and connection)
@@ -1129,12 +1129,12 @@ async fn credential_two_credentials_communicate_tcp() {
     cred1_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
     cred2_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
 
     let cred1_peer_id = cred1_inst.peer_id();
@@ -1220,7 +1220,7 @@ async fn credential_revocation_propagates() {
     cred_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
 
     let cred_peer_id = cred_inst.peer_id();
@@ -1340,7 +1340,7 @@ async fn credential_non_reusable_allows_only_one_peer() {
         .unwrap()
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
 
     let cred1_peer_id = cred1_inst.as_ref().unwrap().peer_id();
@@ -1365,7 +1365,7 @@ async fn credential_non_reusable_allows_only_one_peer() {
         .unwrap()
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
 
     let cred2_peer_id = cred2_inst.as_ref().unwrap().peer_id();
@@ -1484,7 +1484,7 @@ async fn credential_unknown_rejected() {
     cred_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
 
     let cred_peer_id = cred_inst.peer_id();
@@ -1536,12 +1536,12 @@ async fn credential_unknown_via_shared_rejected(#[values(true, false)] test_revo
     admin_a_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.2:11010".parse().unwrap(),
+            "tcp://10.1.1.2:10010".parse().unwrap(),
         ));
     admin_c_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.2:11010".parse().unwrap(),
+            "tcp://10.1.1.2:10010".parse().unwrap(),
         ));
 
     let admin_c_peer_id = admin_c_inst.peer_id();
@@ -1587,7 +1587,7 @@ async fn credential_unknown_via_shared_rejected(#[values(true, false)] test_revo
     unknown_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.2:11010".parse().unwrap(),
+            "tcp://10.1.1.2:10010".parse().unwrap(),
         ));
 
     let unknown_peer_id = unknown_inst.peer_id();
@@ -1631,7 +1631,7 @@ async fn credential_unknown_via_shared_rejected(#[values(true, false)] test_revo
         unknown_inst
             .get_conn_manager()
             .add_connector(TcpTunnelConnector::new(
-                "tcp://10.1.1.2:11010".parse().unwrap(),
+                "tcp://10.1.1.2:10010".parse().unwrap(),
             ));
 
         assert_shared_visibility_stable(
@@ -1695,12 +1695,12 @@ async fn credential_admin_shared_admin_credential_connectivity(
     admin_a_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.2:11010".parse().unwrap(),
+            "tcp://10.1.1.2:10010".parse().unwrap(),
         ));
     admin_c_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.2:11010".parse().unwrap(),
+            "tcp://10.1.1.2:10010".parse().unwrap(),
         ));
 
     // print all peer ids
@@ -1745,10 +1745,10 @@ async fn credential_admin_shared_admin_credential_connectivity(
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(if !connect_to_admin {
             // connect to shared node
-            "tcp://10.1.1.2:11010".parse().unwrap()
+            "tcp://10.1.1.2:10010".parse().unwrap()
         } else {
             // connect to admin node
-            "tcp://10.1.1.4:11010".parse().unwrap()
+            "tcp://10.1.1.4:10010".parse().unwrap()
         }));
     // print all peer ids
     println!("cred_d_peer_id: {:?}", cred_d_peer_id);
@@ -1810,12 +1810,12 @@ async fn credential_non_reusable_across_two_admins_allows_only_one_peer() {
     admin_a_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.2:11010".parse().unwrap(),
+            "tcp://10.1.1.2:10010".parse().unwrap(),
         ));
     admin_c_inst
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.2:11010".parse().unwrap(),
+            "tcp://10.1.1.2:10010".parse().unwrap(),
         ));
 
     let admin_c_peer_id = admin_c_inst.peer_id();
@@ -1874,7 +1874,7 @@ async fn credential_non_reusable_across_two_admins_allows_only_one_peer() {
         .unwrap()
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.1:11010".parse().unwrap(),
+            "tcp://10.1.1.1:10010".parse().unwrap(),
         ));
 
     let mut cred_right_inst = Some(Instance::new(cred_right_config));
@@ -1884,7 +1884,7 @@ async fn credential_non_reusable_across_two_admins_allows_only_one_peer() {
         .unwrap()
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.4:11010".parse().unwrap(),
+            "tcp://10.1.1.4:10010".parse().unwrap(),
         ));
 
     let cred_left_peer_id = cred_left_inst.as_ref().unwrap().peer_id();

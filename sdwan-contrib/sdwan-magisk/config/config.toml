@@ -2,11 +2,11 @@ instance_name = "default"
 dhcp = false
 #ipv4="本机ip"
 listeners = [
-    "tcp://0.0.0.0:11010",
-    "udp://0.0.0.0:11010",
-    "wg://0.0.0.0:11011",
-    "ws://0.0.0.0:11011/",
-    "wss://0.0.0.0:11012/",
+    "tcp://0.0.0.0:10010",
+    "udp://0.0.0.0:10010",
+    "wg://0.0.0.0:10011",
+    "ws://0.0.0.0:10011/",
+    "wss://0.0.0.0:10012/",
 ]
 mapped_listeners = []
 exit_nodes = []
@@ -20,7 +20,7 @@ network_secret = ""
 #uri = "协议://中转ip:端口"
 
 [flags]
-default_protocol = "tcp"
+default_protocol = "udp"
 dev_name = ""
 enable_encryption = true
 enable_ipv6 = true

@@ -278,7 +278,7 @@ export default {
       editForm: {
         name: '',
         host: '',
-        port: 11010,
+        port: 10010,
         protocol: 'tcp',
         version: '',
         max_connections: 100,
@@ -448,7 +448,7 @@ export default {
       this.editForm = {
         name: '',
         host: '',
-        port: 11010,
+        port: 10010,
         protocol: 'tcp',
         version: '',
         max_connections: 100,

@@ -18,7 +18,7 @@
 <img src="assets/running-page.png" width="300" alt="运行页面">
 </p>
 
-📚 **[完整文档](https://sdwan.cn)** | 🖥️ **[Web 控制台](https://sdwan.cn/web)** | 📝 **[下载发布版本](https://github.com/zzxym/sdwan/releases)** | 🧩 **[第三方工具](https://sdwan.cn/guide/installation_gui.html#%E7%AC%AC%E4%B8%89%E6%96%B9%E5%9B%BE%E5%BD%A2%E7%95%8C%E9%9D%A2)** | ❤️ **[赞助](#赞助)**
+📚 **[完整文档](https://sdwan.cn)** | 🖥️ **[Web 控制台](http://oa.xiaolin.cc:11211)** | 📝 **[下载发布版本](https://github.com/zzxym/sdwan/releases)** | 🧩 **[第三方工具](https://sdwan.cn/guide/installation_gui.html#%E7%AC%AC%E4%B8%89%E6%96%B9%E5%9B%BE%E5%BD%A2%E7%95%8C%E9%9D%A2)** | ❤️ **[赞助](#赞助)**
 
 ## 特性
 
@@ -106,14 +106,14 @@ SDWAN 支持使用共享节点快速组网。当您没有公网 IP 时，可以�
 
 ```bash
 # 以管理员权限运行
-sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<共享节点IP>:11010
+sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<共享节点IP>:10010
 ```
 
 2. 在节点 B 上运行：
 
 ```bash
 # 以管理员权限运行
-sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<共享节点IP>:11010
+sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<共享节点IP>:10010
 ```
 
 执行成功后，可以使用 `sdwan-cli` 检查网络状态：
@@ -121,8 +121,8 @@ sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<共享节�
 ```text
 | ipv4         | hostname       | cost  | lat_ms | loss_rate | rx_bytes | tx_bytes | tunnel_proto | nat_type | id         | version         |
 | ------------ | -------------- | ----- | ------ | --------- | -------- | -------- | ------------ | -------- | ---------- | --------------- |
-| 10.126.126.1 | abc-1          | Local | *      | *         | *        | *        | udp          | FullCone | 439804259  | 2.6.2-70e69a38~ |
-| 10.126.126.2 | abc-2          | p2p   | 3.452  | 0         | 17.33 kB | 20.42 kB | udp          | FullCone | 390879727  | 2.6.2-70e69a38~ |
+| 172.31.0.1 | abc-1          | Local | *      | *         | *        | *        | udp          | FullCone | 439804259  | 2.6.2-70e69a38~ |
+| 172.31.0.2 | abc-2          | p2p   | 3.452  | 0         | 17.33 kB | 20.42 kB | udp          | FullCone | 390879727  | 2.6.2-70e69a38~ |
 |              | PublicServer_a | p2p   | 27.796 | 0.000     | 50.01 kB | 67.46 kB | tcp          | Unknown  | 3771642457 | 2.6.2-70e69a38~ |
 ```
 
@@ -130,8 +130,8 @@ sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<共享节�
 
 ```bash
 # 测试连通性
-ping 10.126.126.1
-ping 10.126.126.2
+ping 172.31.0.1
+ping 172.31.0.2
 ```
 
 注意：如果无法 ping 通，可能是防火墙阻止了入站流量。请关闭防火墙或添加允许规则。
@@ -140,7 +140,7 @@ ping 10.126.126.2
 
 ```bash
 # 连接多个共享节点
-sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<公共节点IP>:11010 -p udp://<公共节点IP>:11010
+sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<公共节点IP>:10010 -p udp://<公共节点IP>:10010
 ```
 
 #### 去中心化组网
@@ -155,17 +155,19 @@ sudo sdwan-core -i 10.144.144.1
 ```
 
 启动后，该节点将默认监听以下端口：
-- TCP：11010
-- UDP：11010
-- WebSocket：11011
-- WebSocket SSL：11012
-- WireGuard：11013
+- TCP：10010
+- UDP：10010
+- WebSocket：10011
+- WireGuard：10011
+- WebSocket SSL：10012
+- QUIC：10012
+- FakeTCP：10013
 
 2. 连接第二个节点（节点 B）：
 
 ```bash
 # 使用第一个节点的公网 IP 连接
-sudo sdwan-core -i 10.144.144.2 -p udp://第一个节点的公网IP:11010
+sudo sdwan-core -i 10.144.144.2 -p udp://第一个节点的公网IP:10010
 ```
 
 3. 验证连接：
@@ -188,7 +190,7 @@ sdwan-cli node
 
 ```bash
 # 使用任何现有节点的公网 IP 连接
-sudo sdwan-core -i 10.144.144.3 -p udp://任何现有节点的公网IP:11010
+sudo sdwan-core -i 10.144.144.3 -p udp://任何现有节点的公网IP:10010
 ```
 
 ### 🔍 高级功能
@@ -263,8 +265,8 @@ ios <-.-> nodea <--> nodeb <-.-> id1
 1. 启动启用 WireGuard 门户的 SDWAN：
 
 ```bash
-# 在 0.0.0.0:11013 上监听，并使用 10.14.14.0/24 子网作为 WireGuard 客户端
-sudo sdwan-core -i 10.144.144.1 --vpn-portal wg://0.0.0.0:11013/10.14.14.0/24
+# 在 0.0.0.0:10013 上监听，并使用 10.14.14.0/24 子网作为 WireGuard 客户端
+sudo sdwan-core -i 10.144.144.1 --vpn-portal wg://0.0.0.0:10013/10.14.14.0/24
 ```
 
 2. 获取 WireGuard 客户端配置：

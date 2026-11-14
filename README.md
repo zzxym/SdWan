@@ -18,7 +18,7 @@
 <img src="assets/running-page.png" width="300" alt="running page">
 </p>
 
-📚 **[Full Documentation](https://sdwan.cn/en/)** | 🖥️ **[Web Console](https://sdwan.cn/web)** | 📝 **[Download Releases](https://github.com/zzxym/sdwan/releases)** | 🧩 **[Third Party Tools](https://sdwan.cn/en/guide/installation_gui.html#third-party-graphical-interfaces)** | ❤️ **[Sponsor](#sponsor)**
+📚 **[Full Documentation](https://sdwan.cn/en/)** | 🖥️ **[Web Console](http://oa.xiaolin.cc:11211)** | 📝 **[Download Releases](https://github.com/zzxym/sdwan/releases)** | 🧩 **[Third Party Tools](https://sdwan.cn/en/guide/installation_gui.html#third-party-graphical-interfaces)** | ❤️ **[Sponsor](#sponsor)**
 
 ## Features
 
@@ -106,14 +106,14 @@ Taking two nodes as an example (Please use more complex network name to avoid co
 
 ```bash
 # Run with administrator privileges
-sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP>:11010
+sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP>:10010
 ```
 
 2. Run on Node B:
 
 ```bash
 # Run with administrator privileges
-sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP>:11010
+sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP>:10010
 ```
 
 After successful execution, you can check the network status using `sdwan-cli`:
@@ -121,8 +121,8 @@ After successful execution, you can check the network status using `sdwan-cli`:
 ```text
 | ipv4         | hostname       | cost  | lat_ms | loss_rate | rx_bytes | tx_bytes | tunnel_proto | nat_type | id         | version         |
 | ------------ | -------------- | ----- | ------ | --------- | -------- | -------- | ------------ | -------- | ---------- | --------------- |
-| 10.126.126.1 | abc-1          | Local | *      | *         | *        | *        | udp          | FullCone | 439804259  | 2.6.2-70e69a38~ |
-| 10.126.126.2 | abc-2          | p2p   | 3.452  | 0         | 17.33 kB | 20.42 kB | udp          | FullCone | 390879727  | 2.6.2-70e69a38~ |
+| 172.31.0.1 | abc-1          | Local | *      | *         | *        | *        | udp          | FullCone | 439804259  | 2.6.2-70e69a38~ |
+| 172.31.0.2 | abc-2          | p2p   | 3.452  | 0         | 17.33 kB | 20.42 kB | udp          | FullCone | 390879727  | 2.6.2-70e69a38~ |
 |              | PublicServer_a | p2p   | 27.796 | 0.000     | 50.01 kB | 67.46 kB | tcp          | Unknown  | 3771642457 | 2.6.2-70e69a38~ |
 ```
 
@@ -130,8 +130,8 @@ You can test connectivity between nodes:
 
 ```bash
 # Test connectivity
-ping 10.126.126.1
-ping 10.126.126.2
+ping 172.31.0.1
+ping 172.31.0.2
 ```
 
 Note: If you cannot ping through, it may be that the firewall is blocking incoming traffic. Please turn off the firewall or add allow rules.
@@ -140,7 +140,7 @@ To improve availability, you can connect to multiple shared nodes simultaneously
 
 ```bash
 # Connect to multiple shared nodes
-sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP1>:11010 -p udp://<SharedNodeIP2>:11010
+sudo sdwan-core -d --network-name abc --network-secret abc -p tcp://<SharedNodeIP1>:10010 -p udp://<SharedNodeIP2>:10010
 ```
 
 Once your network is set up successfully, you can easily configure it to start automatically on system boot. Refer to the [One-Click Register Service guide](https://sdwan.cn/en/guide/network/oneclick-install-as-service.html) for step-by-step instructions on registering SDWAN as a system service.
@@ -157,17 +157,19 @@ sudo sdwan-core -i 10.144.144.1
 ```
 
 After startup, this node will listen on the following ports by default:
-- TCP: 11010
-- UDP: 11010
-- WebSocket: 11011
-- WebSocket SSL: 11012
-- WireGuard: 11013
+- TCP: 10010
+- UDP: 10010
+- WebSocket: 10011
+- WireGuard: 10011
+- WebSocket SSL: 10012
+- QUIC: 10012
+- FakeTCP: 10013
 
 2. Connect Second Node (Node B):
 
 ```bash
 # Connect to the first node using its public IP
-sudo sdwan-core -i 10.144.144.2 -p udp://FIRST_NODE_PUBLIC_IP:11010
+sudo sdwan-core -i 10.144.144.2 -p udp://FIRST_NODE_PUBLIC_IP:10010
 ```
 
 3. Verify Connection:
@@ -190,7 +192,7 @@ For more nodes to join the network, they can connect to any existing node in the
 
 ```bash
 # Connect to any existing node using its public IP
-sudo sdwan-core -i 10.144.144.3 -p udp://ANY_EXISTING_NODE_PUBLIC_IP:11010
+sudo sdwan-core -i 10.144.144.3 -p udp://ANY_EXISTING_NODE_PUBLIC_IP:10010
 ```
 
 ### 🔍 Advanced Features
@@ -265,8 +267,8 @@ ios <-.-> nodea <--> nodeb <-.-> id1
 1. Start SDWAN with WireGuard portal enabled:
 
 ```bash
-# Listen on 0.0.0.0:11013 and use 10.14.14.0/24 subnet for WireGuard clients
-sudo sdwan-core -i 10.144.144.1 --vpn-portal wg://0.0.0.0:11013/10.14.14.0/24
+# Listen on 0.0.0.0:10013 and use 10.14.14.0/24 subnet for WireGuard clients
+sudo sdwan-core -i 10.144.144.1 --vpn-portal wg://0.0.0.0:10013/10.14.14.0/24
 ```
 
 2. Get WireGuard client configuration:

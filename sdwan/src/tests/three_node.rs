@@ -78,11 +78,11 @@ pub fn get_inst_config(
     config.set_ipv4(Some(ipv4.parse().unwrap()));
     config.set_ipv6(Some(ipv6.parse().unwrap()));
     config.set_listeners(vec![
-        "tcp://0.0.0.0:11010".parse().unwrap(),
-        "udp://0.0.0.0:11010".parse().unwrap(),
-        "wg://0.0.0.0:11011".parse().unwrap(),
-        "ws://0.0.0.0:11011".parse().unwrap(),
-        "wss://0.0.0.0:11012".parse().unwrap(),
+        "tcp://0.0.0.0:10010".parse().unwrap(),
+        "udp://0.0.0.0:10010".parse().unwrap(),
+        "wg://0.0.0.0:10011".parse().unwrap(),
+        "ws://0.0.0.0:10011".parse().unwrap(),
+        "wss://0.0.0.0:10012".parse().unwrap(),
     ]);
     config.set_socks5_portal(Some("socks5://0.0.0.0:12345".parse().unwrap()));
     config
@@ -129,20 +129,20 @@ async fn init_three_node_ex_with_inst3<F: Fn(TomlConfigLoader) -> TomlConfigLoad
         inst1
             .get_conn_manager()
             .add_connector(TcpTunnelConnector::new(
-                "tcp://10.1.1.2:11010".parse().unwrap(),
+                "tcp://10.1.1.2:10010".parse().unwrap(),
             ));
     } else if proto == "udp" {
         inst1
             .get_conn_manager()
             .add_connector(UdpTunnelConnector::new(
-                "udp://10.1.1.2:11010".parse().unwrap(),
+                "udp://10.1.1.2:10010".parse().unwrap(),
             ));
     } else if proto == "wg" {
         #[cfg(feature = "wireguard")]
         inst1
             .get_conn_manager()
             .add_connector(WgTunnelConnector::new(
-                "wg://10.1.1.2:11011".parse().unwrap(),
+                "wg://10.1.1.2:10011".parse().unwrap(),
                 WgConfig::new_from_network_identity(
                     &inst2.get_global_ctx().get_network_identity().network_name,
                     &inst2
@@ -157,14 +157,14 @@ async fn init_three_node_ex_with_inst3<F: Fn(TomlConfigLoader) -> TomlConfigLoad
         inst1
             .get_conn_manager()
             .add_connector(crate::tunnel::websocket::WsTunnelConnector::new(
-                "ws://10.1.1.2:11011".parse().unwrap(),
+                "ws://10.1.1.2:10011".parse().unwrap(),
             ));
     } else if proto == "wss" {
         #[cfg(feature = "websocket")]
         inst1
             .get_conn_manager()
             .add_connector(crate::tunnel::websocket::WsTunnelConnector::new(
-                "wss://10.1.1.2:11012".parse().unwrap(),
+                "wss://10.1.1.2:10012".parse().unwrap(),
             ));
     }
 
@@ -344,7 +344,7 @@ mod direct_connector_mapped_listener_tests {
     #[serial_test::serial]
     async fn direct_connector_mapped_listener_without_port(
         #[values(
-            ("tcp://10.199.0.2", "tcp://0.0.0.0:11010"),
+            ("tcp://10.199.0.2", "tcp://0.0.0.0:10010"),
             ("ws://10.199.0.2", "ws://0.0.0.0:80"),
             ("wss://10.199.0.2", "wss://0.0.0.0:443")
         )]
@@ -662,7 +662,7 @@ fn get_public_ipv6_config(
         network_secret: Some("public_ipv6_auto_addr_secret".to_string()),
         network_secret_digest: None,
     });
-    config.set_listeners(vec!["tcp://0.0.0.0:11010".parse().unwrap()]);
+    config.set_listeners(vec!["tcp://0.0.0.0:10010".parse().unwrap()]);
     let mut flags = config.get_flags();
     flags.dev_name = dev_name.to_string();
     config.set_flags(flags);
@@ -701,7 +701,7 @@ async fn init_public_ipv6_two_node(
     provider
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.2:11010".parse().unwrap(),
+            "tcp://10.1.1.2:10010".parse().unwrap(),
         ));
 
     wait_for_condition(
@@ -900,7 +900,7 @@ pub async fn public_ipv6_auto_addr_reconnect_reuses_same_address() {
     provider
         .get_conn_manager()
         .add_connector(TcpTunnelConnector::new(
-            "tcp://10.1.1.2:11010".parse().unwrap(),
+            "tcp://10.1.1.2:10010".parse().unwrap(),
         ));
 
     wait_for_condition(
@@ -1431,13 +1431,13 @@ pub async fn proxy_three_node_disconnect_test(#[values("tcp", "wg")] proto: &str
         inst4
             .get_conn_manager()
             .add_connector(TcpTunnelConnector::new(
-                "tcp://10.1.2.3:11010".parse().unwrap(),
+                "tcp://10.1.2.3:10010".parse().unwrap(),
             ));
     } else if proto == "wg" {
         inst4
             .get_conn_manager()
             .add_connector(WgTunnelConnector::new(
-                "wg://10.1.2.3:11011".parse().unwrap(),
+                "wg://10.1.2.3:10011".parse().unwrap(),
                 WgConfig::new_from_network_identity(
                     &inst4.get_global_ctx().get_network_identity().network_name,
                     &inst4
@@ -2294,25 +2294,25 @@ async fn avoid_tunnel_loop_back_to_virtual_network(
 
     assert_try_direct_connect_err(
         &insts[0],
-        TcpTunnelConnector::new("tcp://10.144.144.2:11010".parse().unwrap()),
+        TcpTunnelConnector::new("tcp://10.144.144.2:10010".parse().unwrap()),
     )
     .await;
 
     assert_try_direct_connect_err(
         &insts[0],
-        UdpTunnelConnector::new("udp://10.144.144.3:11010".parse().unwrap()),
+        UdpTunnelConnector::new("udp://10.144.144.3:10010".parse().unwrap()),
     )
     .await;
 
     assert_try_direct_connect_err(
         &insts[0],
-        TcpTunnelConnector::new("tcp://10.1.2.3:11010".parse().unwrap()),
+        TcpTunnelConnector::new("tcp://10.1.2.3:10010".parse().unwrap()),
     )
     .await;
 
     assert_try_direct_connect_err(
         &insts[0],
-        UdpTunnelConnector::new("udp://10.1.2.3:11010".parse().unwrap()),
+        UdpTunnelConnector::new("udp://10.1.2.3:10010".parse().unwrap()),
     )
     .await;
 

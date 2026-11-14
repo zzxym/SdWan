@@ -1407,7 +1407,7 @@ fn create_test_instance_config(
     config.set_netns(netns.map(ToOwned::to_owned));
     config.set_ipv4(Some(ipv4.parse().unwrap()));
     config.set_ipv6(Some(ipv6.parse().unwrap()));
-    config.set_listeners(vec!["udp://0.0.0.0:11010".parse().unwrap()]);
+    config.set_listeners(vec!["udp://0.0.0.0:10010".parse().unwrap()]);
     config
 }
 

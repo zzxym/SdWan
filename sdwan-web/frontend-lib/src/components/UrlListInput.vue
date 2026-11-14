@@ -12,7 +12,7 @@ const props = defineProps<{
 const list = defineModel<string[]>({ required: true })
 
 const addUrl = () => {
-    list.value.push(props.defaultUrl || 'tcp://0.0.0.0:11010')
+    list.value.push(props.defaultUrl || 'tcp://0.0.0.0:10010')
 }
 
 const removeUrl = (index: number) => {

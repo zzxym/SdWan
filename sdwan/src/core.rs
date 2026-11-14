@@ -806,7 +806,7 @@ impl Cli {
             }
 
             if let Ok(ip) = l.trim_matches(|c| c == '[' || c == ']').parse::<IpAddr>() {
-                parsed.extend(Self::gen_listeners(SocketAddr::new(ip, 11010)));
+                parsed.extend(Self::gen_listeners(SocketAddr::new(ip, 10010)));
                 continue;
             }
 
@@ -824,7 +824,7 @@ impl Cli {
                 parsed.push(format!(
                     "{}://0.0.0.0:{}",
                     scheme,
-                    11010 + scheme.port_offset()
+                    10010 + scheme.port_offset()
                 ));
                 continue;
             }
@@ -947,7 +947,7 @@ impl NetworkOptions {
             );
         } else if cfg.get_listeners().is_none() {
             cfg.set_listeners(
-                Cli::parse_listeners(false, vec!["11010".to_string()])?
+                Cli::parse_listeners(false, vec!["10010".to_string()])?
                     .into_iter()
                     .map(|s| s.parse().unwrap())
                     .collect(),
@@ -1018,7 +1018,7 @@ impl NetworkOptions {
         }
 
         for port_forward in self.port_forward.iter() {
-            let example_str = ", example: udp://0.0.0.0:12345/10.126.126.1:12345";
+            let example_str = ", example: udp://0.0.0.0:12345/172.31.0.1:12345";
 
             let bind_addr = format!(
                 "{}:{}",
@@ -1364,7 +1364,7 @@ async fn run_main(cli: Cli) -> anyhow::Result<()> {
                 "Web client started successfully...",
             );
 
-            log::info!("Official config website: https://sdwan.cn/web");
+            log::info!("Official config website: http://oa.xiaolin.cc:11211");
         })?;
 
         Some(wc)
@@ -1648,17 +1648,17 @@ mod tests {
 
         let cases: [(&str, IpSchemeMap); _] = [
             ("0", |s| format!("{}://0.0.0.0:0", s)),
-            ("11010", |s| {
-                format!("{}://0.0.0.0:{}", s, 11010 + s.port_offset())
+            ("10010", |s| {
+                format!("{}://0.0.0.0:{}", s, 10010 + s.port_offset())
             }),
             ("1.1.1.1", |s| {
-                format!("{}://1.1.1.1:{}", s, 11010 + s.port_offset())
+                format!("{}://1.1.1.1:{}", s, 10010 + s.port_offset())
             }),
             ("1.1.1.1:50000", |s| {
                 format!("{}://1.1.1.1:{}", s, 50000 + s.port_offset())
             }),
             ("[::1]", |s| {
-                format!("{}://[::1]:{}", s, 11010 + s.port_offset())
+                format!("{}://[::1]:{}", s, 10010 + s.port_offset())
             }),
             ("[::1]:50000", |s| {
                 format!("{}://[::1]:{}", s, 50000 + s.port_offset())
@@ -1682,7 +1682,7 @@ mod tests {
         let cases: [(IpSchemeMap, IpSchemeMap); _] = [
             (
                 |s| format!("{}", s),
-                |s| format!("{}://0.0.0.0:{}", s, 11010 + s.port_offset()),
+                |s| format!("{}://0.0.0.0:{}", s, 10010 + s.port_offset()),
             ),
             (
                 |s| format!("{}:50000", s),

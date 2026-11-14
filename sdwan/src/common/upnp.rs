@@ -768,19 +768,19 @@ mod tests {
     #[test]
     fn udp_mapping_requires_private_or_unspecified_ipv4_listener() {
         assert!(super::should_map_udp_listener(
-            &"udp://0.0.0.0:11010".parse().unwrap()
+            &"udp://0.0.0.0:10010".parse().unwrap()
         ));
         assert!(super::should_map_udp_listener(
-            &"udp://192.168.1.10:11010".parse().unwrap()
+            &"udp://192.168.1.10:10010".parse().unwrap()
         ));
         assert!(!super::should_map_udp_listener(
-            &"udp://127.0.0.1:11010".parse().unwrap()
+            &"udp://127.0.0.1:10010".parse().unwrap()
         ));
         assert!(!super::should_map_udp_listener(
-            &"udp://8.8.8.8:11010".parse().unwrap()
+            &"udp://8.8.8.8:10010".parse().unwrap()
         ));
         assert!(!super::should_map_udp_listener(
-            &"tcp://0.0.0.0:11010".parse().unwrap()
+            &"tcp://0.0.0.0:10010".parse().unwrap()
         ));
     }
 }

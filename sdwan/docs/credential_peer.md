@@ -287,7 +287,7 @@ sdwan-cli credential list
 sdwan-core --network-name test \
   --secure-mode \
   --credential <私钥base64> \
-  --peers tcp://管理节点:11010
+  --peers tcp://管理节点:10010
 
 # 内部实现: 将凭据私钥设为 SecureModeConfig.local_private_key
 ```
@@ -357,11 +357,11 @@ if !secret_proof_verified {
 3. **手动测试**:
    ```bash
    # A: 管理节点
-   sdwan-core -n test -s secret --secure-mode --listeners tcp://0.0.0.0:11010
+   sdwan-core -n test -s secret --secure-mode --listeners tcp://0.0.0.0:10010
    sdwan-cli credential generate  # → credential_id + credential_secret
 
    # C: 临时节点
-   sdwan-core -n test --secure-mode --credential <私钥base64> --peers tcp://A:11010
+   sdwan-core -n test --secure-mode --credential <私钥base64> --peers tcp://A:10010
 
    # 验证后撤销
    sdwan-cli credential revoke <credential_id>

@@ -26,7 +26,7 @@ use super::dns::resolve_txt_record;
 use super::stun_codec_ext::*;
 
 const DEFAULT_UDP_STUN_SERVERS: &[&str] = &[
-    "txt:stun.sdwan.cn",
+    "txt:stun.easytier.cn",
     "stun.miwifi.com",
     "stun.chat.bilibili.com",
     "stun.hitv.com",
@@ -42,7 +42,7 @@ const DEFAULT_TCP_STUN_SERVERS: &[&str] = &[
     "stun.radiojar.com",
 ];
 
-const DEFAULT_UDP_V6_STUN_SERVERS: &[&str] = &["txt:stun-v6.sdwan.cn"];
+const DEFAULT_UDP_V6_STUN_SERVERS: &[&str] = &["txt:stun-v6.easytier.cn"];
 
 struct HostResolverIter {
     hostnames: Vec<String>,
@@ -1401,7 +1401,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_txt_public_stun_server() {
-        let stun_servers = vec!["txt:stun.sdwan.cn".to_string()];
+        let stun_servers = vec!["txt:stun.easytier.cn".to_string()];
         let detector = UdpNatTypeDetector::new(stun_servers, 1);
         timeout(Duration::from_secs(30), async {
             loop {

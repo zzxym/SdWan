@@ -240,12 +240,12 @@ struct ConnectorArgs {
 enum ConnectorSubCommand {
     /// Add a connector
     Add {
-        #[arg(help = "connector url, e.g., tcp://1.2.3.4:11010")]
+        #[arg(help = "connector url, e.g., tcp://1.2.3.4:10010")]
         url: String,
     },
     /// Remove a connector
     Remove {
-        #[arg(help = "connector url, e.g., tcp://1.2.3.4:11010")]
+        #[arg(help = "connector url, e.g., tcp://1.2.3.4:10010")]
         url: String,
     },
     /// List connectors

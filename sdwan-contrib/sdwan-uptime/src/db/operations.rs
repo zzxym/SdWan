@@ -365,7 +365,7 @@ mod tests {
         let req = CreateNodeRequest {
             name: "Test Node".to_string(),
             host: "test.example.com".to_string(),
-            port: 11010,
+            port: 10010,
             protocol: "tcp".to_string(),
             description: Some("Test node".to_string()),
             max_connections: 100,
@@ -382,7 +382,7 @@ mod tests {
 
         assert_eq!(node.name, "Test Node");
         assert_eq!(node.host, "test.example.com");
-        assert_eq!(node.port, 11010);
+        assert_eq!(node.port, 10010);
         assert!(node.is_active);
 
         // 测试获取节点
@@ -395,7 +395,7 @@ mod tests {
         assert_eq!(all_nodes.len(), 1);
 
         // 测试节点存在性检查
-        let exists = NodeOperations::node_exists(&db, "test.example.com", 11010, "tcp")
+        let exists = NodeOperations::node_exists(&db, "test.example.com", 10010, "tcp")
             .await
             .unwrap();
         assert!(exists);
@@ -413,7 +413,7 @@ mod tests {
         let req = CreateNodeRequest {
             name: "Test Node".to_string(),
             host: "test.example.com".to_string(),
-            port: 11010,
+            port: 10010,
             protocol: "tcp".to_string(),
             description: Some("Test node".to_string()),
             max_connections: 100,

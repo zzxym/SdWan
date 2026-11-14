@@ -18,7 +18,7 @@ const hostFocused = ref(false)
 const parseUrl = (val: string | null | undefined): { proto: string; host: string; port: number | null } => {
     const getValidPort = (portStr: string, proto: string) => {
         const p = parseInt(portStr)
-        return isNaN(p) ? (props.protos[proto] ?? 11010) : p
+        return isNaN(p) ? (props.protos[proto] ?? 10010) : p
     }
     const parseByPattern = (input: string) => {
         const trimmed = input.trim()
@@ -52,7 +52,7 @@ const parseUrl = (val: string | null | undefined): { proto: string; host: string
     }
 
     if (!val) {
-        return { proto: 'tcp', host: '', port: props.protos['tcp'] ?? 11010 }
+        return { proto: 'tcp', host: '', port: props.protos['tcp'] ?? 10010 }
     }
     const parsedByPattern = parseByPattern(val)
     if (parsedByPattern) {
@@ -73,7 +73,7 @@ const buildUrlValue = (value: { proto: string, host: string, port: number | null
     }
     // Omit port when the protocol uses no port (protos value = 0), or when the
     // original URL had no explicit port (port === null) – avoids overwriting an
-    // implicit standard port (e.g. 443 for wss) with an Sdwan default (11012).
+    // implicit standard port (e.g. 443 for wss) with an Sdwan default (10012).
     if (props.protos[proto] === 0 || value.port === null) {
         return `${proto}://${host}`
     }
@@ -164,7 +164,7 @@ const onProtoChange = (newProto: string) => {
                     <span style="font-weight: bold">:</span>
                 </InputGroupAddon>
                 <InputNumber v-model="internalValue.port" :format="false" :min="1" :max="65535" class="max-w-24"
-                    :placeholder="String(protos[internalValue.proto] ?? 11010)" fluid />
+                    :placeholder="String(protos[internalValue.proto] ?? 10010)" fluid />
             </template>
             <!-- Rendered in both responsive branches; keep action slot content free of side effects and duplicate IDs. -->
             <slot name="actions"></slot>
@@ -195,7 +195,7 @@ const onProtoChange = (newProto: string) => {
                 <div v-if="!isNoPortProto" class="flex flex-col gap-2">
                     <label>{{ t('port') }}</label>
                     <InputNumber v-model="internalValue.port" :format="false" :min="1" :max="65535" class="w-full"
-                        :placeholder="String(protos[internalValue.proto] ?? 11010)" />
+                        :placeholder="String(protos[internalValue.proto] ?? 10010)" />
                 </div>
             </div>
             <template #footer>

@@ -237,7 +237,7 @@ const props = defineProps({
     default: () => ({
       name: '',
       host: '',
-      port: 11010,
+      port: 10010,
       protocol: 'tcp',
       allow_relay: true,
       network_name: '',

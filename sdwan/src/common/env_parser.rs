@@ -105,7 +105,7 @@ mod tests {
     #[test]
     fn test_complex_toml_config() {
         set_env_var("ET_SECRET", "my-secret-key");
-        set_env_var("ET_PORT", "11010");
+        set_env_var("ET_PORT", "10010");
 
         let config = r#"
 [network_identity]
@@ -119,7 +119,7 @@ uri = "tcp://127.0.0.1:${ET_PORT}"
         let (result, changed) = expand_env_vars(config);
         assert!(changed);
         assert!(result.contains(r#"network_secret = "my-secret-key""#));
-        assert!(result.contains(r#"uri = "tcp://127.0.0.1:11010""#));
+        assert!(result.contains(r#"uri = "tcp://127.0.0.1:10010""#));
     }
 
     #[test]
