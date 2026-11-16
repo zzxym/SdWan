@@ -29,7 +29,8 @@ impl MigrationTrait for Migration {
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         let db = manager.get_connection();
 
-        db.execute_unprepared("DROP TABLE IF EXISTS app_config;").await?;
+        db.execute_unprepared("DROP TABLE IF EXISTS app_config;")
+            .await?;
 
         Ok(())
     }

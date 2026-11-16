@@ -277,7 +277,10 @@ impl RestfulServer {
             .merge(NetworkApi::build_route())
             .merge(rpc::router())
             .route_layer(login_required!(Backend))
-            .merge(auth::router(self.captcha_store.clone()).layer(Extension(self.feature_flags.clone())))
+            .merge(
+                auth::router(self.captcha_store.clone())
+                    .layer(Extension(self.feature_flags.clone())),
+            )
             .merge(oidc::router())
             .with_state(self.client_mgr.clone())
             .route(

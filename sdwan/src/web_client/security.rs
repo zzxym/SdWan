@@ -399,9 +399,8 @@ mod tests {
 
         tokio::time::sleep(Duration::from_millis(1500)).await;
 
-        let client_task = tokio::spawn(async move {
-            upgrade_client_tunnel(client_tunnel, NOISE_PROLOGUE).await
-        });
+        let client_task =
+            tokio::spawn(async move { upgrade_client_tunnel(client_tunnel, NOISE_PROLOGUE).await });
 
         let (server_res, client_res) = tokio::join!(server_task, client_task);
         let (_, secure) = server_res.unwrap().unwrap();

@@ -48,7 +48,10 @@ pub fn router(captcha_store: Arc<super::captcha::CaptchaStore>) -> Router<AppSta
         .route("/api/v1/auth/login", post(self::post::login))
         .route("/api/v1/auth/logout", get(self::get::logout))
         .route("/api/v1/auth/captcha", get(self::get::get_captcha))
-        .route("/api/v1/auth/captcha_info", get(self::get::get_captcha_info))
+        .route(
+            "/api/v1/auth/captcha_info",
+            get(self::get::get_captcha_info),
+        )
         .route("/api/v1/auth/register", post(self::post::register))
         .layer(axum::Extension(captcha_store))
 }
@@ -176,8 +179,7 @@ mod get {
     use crate::restful::{
         HttpHandleError,
         captcha::{
-            CaptchaStore,
-            NewCaptcha as _,
+            CaptchaStore, NewCaptcha as _,
             builder::spec::SpecCaptcha,
             extension::{CaptchaUtil, axum_tower_sessions::CaptchaAxumTowerSessionExt as _},
         },
