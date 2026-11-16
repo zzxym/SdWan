@@ -448,6 +448,26 @@ client:
   status_no_instance: 当前没有运行中的网络实例，请在 Web 控制台中配置并启动。
   read_only_notice: 本客户端由 Web 控制台统一管控，无法在本地进行配置。
 
+auth:
+  subtitle: 登录后连接您的 SDWAN 网络
+  login: 登录
+  register: 注册
+  username: 用户名
+  username_placeholder: 请输入用户名
+  password: 密码
+  password_placeholder: 请输入密码
+  captcha: 验证码
+  captcha_placeholder: 请输入验证码
+  captcha_refresh: 点击刷新验证码
+  required: 用户名和密码不能为空
+  login_button: 登录
+  register_button: 注册并登录
+  login_failed: 登录失败
+  register_failed: 注册失败
+  login_hint: 使用在 Web 控制台注册的账号登录
+  register_hint: 注册账号与 Web 控制台共用
+  logout: 退出登录
+
 acl:
   title: 访问控制
   help: 访问控制列表，用于限制节点间的通信。

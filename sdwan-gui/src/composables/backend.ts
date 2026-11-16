@@ -82,6 +82,10 @@ export async function getSdwanVersion() {
   return await invoke<string>('sdwan_version')
 }
 
+export async function getLocalIpv4() {
+  return await invoke<string>('local_ipv4')
+}
+
 export async function listNetworkInstanceIds() {
   return await invoke<ListNetworkInstanceIdResponse>('list_network_instance_ids')
 }

@@ -13,7 +13,9 @@ import { GUIRemoteClient } from '~/modules/api'
 import { useToast } from 'primevue'
 import { loadMode, saveMode, type Mode } from '~/composables/mode'
 import ClientStatusPanel from '~/components/ClientStatusPanel.vue'
+import AuthPanel from '~/components/AuthPanel.vue'
 import {
+  getLocalIpv4,
   getSdwanVersion,
   getServiceStatus,
   initRpcConnection,
@@ -21,7 +23,7 @@ import {
   isClientRunning,
   sendConfigs,
 } from '~/composables/backend'
-import { resolveConfigServerUrl } from '~/composables/sdwan'
+import { createDefaultSdwanNetworkConfig, resolveConfigServerUrl } from '~/composables/sdwan'
 import { isPreviewMode, safeOsType } from '~/composables/preview'
 
 /**
@@ -41,6 +43,9 @@ const remoteClient = computed(() => new GUIRemoteClient());
 const clientRunning = ref(false);
 // 浏览器预览模式：没有 Tauri runtime 时使用演示数据渲染界面
 const previewMode = isPreviewMode();
+
+const LOGIN_USER_KEY = 'sdwan_login_user'
+const loggedInUser = ref<string>(localStorage.getItem(LOGIN_USER_KEY) || '')
 
 async function initWithMode(mode: Mode) {
   const running_inst_ids = (await remoteClient.value.list_network_instance_ids().catch(() => undefined))?.running_inst_ids ?? []
@@ -124,8 +129,9 @@ async function initWithMode(mode: Mode) {
     }
   }
   await sendConfigs(running_inst_ids.map(Utils.UuidToStr))
-  if (mode.mode === 'normal') {
-    mode.config_server_url = resolveConfigServerUrl(mode.config_server_url)
+  // 未登录时不连接配置服务器：登录成功后会以用户名作为 token 重新连接
+  if (mode.mode === 'normal' && loggedInUser.value) {
+    mode.config_server_url = resolveConfigServerUrl(loggedInUser.value)
     initWebClient(mode.config_server_url)
   }
   currentMode.value = mode
@@ -217,6 +223,68 @@ async function reconnectClient() {
   }
 }
 
+/**
+ * 登录成功后的受控初始化：
+ * - 用用户名作为 token 连接配置服务器 udp://oa.xiaolin.cc:22020/<username>
+ * - 创建专属网络：网络名=用户名，网络密码=用户注册的密码，子网代理=本机局域网 IP/32
+ * - 复用 load_configs 路径保存并自动运行，不开放任何用户可编辑的配置入口
+ */
+async function onAuthenticated(credential: { username: string, password: string }) {
+  const { username, password } = credential
+  localStorage.setItem(LOGIN_USER_KEY, username)
+  loggedInUser.value = username
+
+  const url = resolveConfigServerUrl(username)
+  const mode = loadMode()
+  if (mode.mode !== 'remote') {
+    mode.config_server_url = url
+  }
+  saveMode(mode)
+  currentMode.value = mode
+
+  if (previewMode) {
+    clientRunning.value = true
+    return
+  }
+
+  try {
+    await initWebClient(url)
+  } catch (e: any) {
+    console.error('Failed to connect config server after login', e)
+  }
+  await provisionUserNetwork(username, password)
+  clientRunning.value = true
+}
+
+async function provisionUserNetwork(username: string, password: string) {
+  const cfg = createDefaultSdwanNetworkConfig()
+  cfg.network_name = username
+  cfg.network_secret = password
+
+  const localIp = await getLocalIpv4().catch(() => '')
+  cfg.proxy_cidrs = localIp ? [`${localIp}/32`] : []
+
+  localStorage.setItem('networkList', JSON.stringify([{
+    config: cfg,
+    source: 'user',
+  }]))
+
+  await sendConfigs([cfg.instance_id])
+}
+
+async function logout() {
+  localStorage.removeItem(LOGIN_USER_KEY)
+  localStorage.removeItem('networkList')
+  loggedInUser.value = ''
+  if (!previewMode) {
+    try {
+      await initWebClient(undefined)
+    } catch (e: any) {
+      console.error('Failed to disconnect config server', e)
+    }
+  }
+}
+
 onMounted(async () => {
   window.setTimeout(async () => {
     await setTrayMenu([
@@ -290,6 +358,12 @@ const setting_menu_items: Ref<MenuItem[]> = ref([
     items: [], // Keep this to show it's a parent menu
   },
   {
+    label: () => t('auth.logout'),
+    icon: 'pi pi-sign-out',
+    command: logout,
+    visible: () => !!loggedInUser.value,
+  },
+  {
     label: () => t('exit'),
     icon: 'pi pi-power-off',
     command: async () => {
@@ -308,7 +382,8 @@ async function connectRpcClient(isNormalMode: boolean, url?: string) {
   <div id="root" class="flex flex-col">
     <Menu ref="log_menu" :model="log_menu_items_popup" :popup="true" />
 
-    <ClientStatusPanel v-if="clientRunning" class="flex-1 overflow-y-auto" />
+    <AuthPanel v-if="!loggedInUser" :preview-mode="previewMode" @authenticated="onAuthenticated" />
+    <ClientStatusPanel v-else-if="clientRunning" class="flex-1 overflow-y-auto" />
     <div v-else class="empty-state flex-1 flex flex-col items-center py-12">
       <i class="pi pi-server text-5xl text-secondary mb-4 opacity-50"></i>
       <div class="text-xl text-center font-medium mb-3">{{ t('client.not_running') }}

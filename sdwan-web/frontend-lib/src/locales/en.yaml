@@ -448,6 +448,26 @@ client:
   status_no_instance: No running network instance. Please configure and start it from the web console.
   read_only_notice: This client is managed by the web console and cannot be configured locally.
 
+auth:
+  subtitle: Sign in to connect to your SDWAN network
+  login: Sign In
+  register: Register
+  username: Username
+  username_placeholder: Enter your username
+  password: Password
+  password_placeholder: Enter your password
+  captcha: Captcha
+  captcha_placeholder: Enter the captcha
+  captcha_refresh: Click to refresh captcha
+  required: Username and password are required
+  login_button: Sign In
+  register_button: Create Account
+  login_failed: Login failed
+  register_failed: Registration failed
+  login_hint: Use the account registered on the web console
+  register_hint: Registration uses the web console account system
+  logout: Sign Out
+
 acl:
   title: Access Control (ACL)
   help: Access control list to restrict communication between nodes.

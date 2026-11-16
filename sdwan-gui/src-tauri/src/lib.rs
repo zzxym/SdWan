@@ -80,6 +80,15 @@ fn sdwan_version() -> Result<String, String> {
     Ok(sdwan::VERSION.to_string())
 }
 
+/// 获取本机出口网卡的 IPv4 地址，用于登录成功后自动添加 /32 子网代理。
+#[tauri::command]
+async fn local_ipv4() -> Result<String, String> {
+    sdwan::common::network::local_ipv4()
+        .await
+        .map(|ip| ip.to_string())
+        .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn set_dock_visibility(app: tauri::AppHandle, visible: bool) -> Result<(), String> {
     #[cfg(target_os = "macos")]
@@ -1243,6 +1252,7 @@ pub fn run_gui() -> std::process::ExitCode {
             set_logging_level,
             set_tun_fd,
             sdwan_version,
+            local_ipv4,
             set_dock_visibility,
             list_network_instance_ids,
             get_config,
