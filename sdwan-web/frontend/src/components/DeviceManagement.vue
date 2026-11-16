@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NetworkTypes, Utils, Api, RemoteManagement } from 'sdwan-frontend-lib';
+import { Utils, Api, RemoteManagement, createDefaultSdwanNetworkConfig } from 'sdwan-frontend-lib';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ApiClient from '../modules/api';
@@ -39,8 +39,9 @@ const selectedInstanceId = computed({
 
 const remoteClient = computed<Api.RemoteClient>(() => props.api.get_remote_client(deviceId.value));
 
+// 新建网络配置时带入 SDWAN 预置的服务器节点与默认信息（与 GUI 一致）
 const newConfigGenerator = () => {
-    const config = NetworkTypes.DEFAULT_NETWORK_CONFIG();
+    const config = createDefaultSdwanNetworkConfig();
     config.hostname = deviceInfo.value?.hostname;
     return config;
 }

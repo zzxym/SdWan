@@ -50,3 +50,5 @@ export default {
 };
 
 export { Config, ConfigEditDialog, RemoteManagement, Status, I18nUtils, NetworkTypes, Api, Utils };
+
+export * from './modules/sdwan-preset';

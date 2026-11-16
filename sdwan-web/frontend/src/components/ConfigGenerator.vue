@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NetworkTypes } from 'sdwan-frontend-lib';
+import { NetworkTypes, createDefaultSdwanNetworkConfig } from 'sdwan-frontend-lib';
 import { computed, ref } from 'vue';
 import { AutoComplete, Divider, Button, Textarea } from "primevue";
 import { getInitialApiHost, cleanAndLoadApiHosts, saveApiHost } from "../modules/api-host"
@@ -20,7 +20,8 @@ const apiHostSearch = async (event: { query: string }) => {
   });
 }
 
-const newNetworkConfig = ref<NetworkTypes.NetworkConfig>(NetworkTypes.DEFAULT_NETWORK_CONFIG());
+// 默认带入 SDWAN 预置的服务器节点与默认信息（与 GUI 一致）
+const newNetworkConfig = ref<NetworkTypes.NetworkConfig>(createDefaultSdwanNetworkConfig());
 const toml_config = ref<string>("");
 const errorMessage = ref<string>("");
 
