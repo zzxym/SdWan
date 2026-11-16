@@ -362,7 +362,9 @@ mod tests {
         let (server_tunnel, client_tunnel) = create_ring_tunnel_pair();
         let _server_tunnel = server_tunnel;
 
-        let err = upgrade_client_tunnel(client_tunnel).await.unwrap_err();
+        let err = upgrade_client_tunnel(client_tunnel, NOISE_PROLOGUE)
+            .await
+            .unwrap_err();
         assert!(matches!(err, TunnelError::Timeout(_)));
     }
 
@@ -397,7 +399,9 @@ mod tests {
 
         tokio::time::sleep(Duration::from_millis(1500)).await;
 
-        let client_task = tokio::spawn(async move { upgrade_client_tunnel(client_tunnel).await });
+        let client_task = tokio::spawn(async move {
+            upgrade_client_tunnel(client_tunnel, NOISE_PROLOGUE).await
+        });
 
         let (server_res, client_res) = tokio::join!(server_task, client_task);
         let (_, secure) = server_res.unwrap().unwrap();

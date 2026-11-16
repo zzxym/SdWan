@@ -48,14 +48,22 @@ pub mod session;
 /// 预置配置服务器地址（主机与端口），用户只填写用户名时使用。
 pub const DEFAULT_CONFIG_SERVER_ADDR: &str = "oa.xiaolin.cc:22020";
 
+/// 预置配置服务器用户名，配置服务器地址为空时使用。
+pub const DEFAULT_CONFIG_SERVER_USER: &str = "xlxxadmin";
+
 /// 解析配置服务器地址。
 ///
+/// - 地址为空时，使用预置的 `udp://oa.xiaolin.cc:22020/xlxxadmin`；
 /// - 用户指定了完整地址（含 scheme，例如 `udp://oa.xiaolin.cc:22020/xlxxadmin`）时，按用户指定的地址连接；
 /// - 只填写了用户名（例如 `xlxxadmin`）时，补全为 `udp://oa.xiaolin.cc:22020/xlxxadmin`。
 fn resolve_config_server_url(config_server_url_s: &str) -> Result<Url> {
     let raw = config_server_url_s.trim();
     if raw.is_empty() {
-        anyhow::bail!("config server address is empty");
+        // 未填写地址时回退到预置配置服务器。
+        return Url::parse(&format!(
+            "udp://{DEFAULT_CONFIG_SERVER_ADDR}/{DEFAULT_CONFIG_SERVER_USER}"
+        ))
+        .with_context(|| "failed to build default config server URL");
     }
 
     // 带 scheme 说明用户指定了完整地址，直接使用。
@@ -350,6 +358,8 @@ mod tests {
 
     use crate::{common::MachineIdOptions, instance_manager::NetworkInstanceManager};
 
+    use super::*;
+
     #[test]
     fn resolve_config_server_url_keeps_user_specified_address() {
         let url = resolve_config_server_url("udp://oa.xiaolin.cc:22020/xlxxadmin").unwrap();
@@ -372,8 +382,11 @@ mod tests {
     }
 
     #[test]
-    fn resolve_config_server_url_rejects_empty_address() {
-        assert!(resolve_config_server_url("   ").is_err());
+    fn resolve_config_server_url_falls_back_to_preset_when_empty() {
+        let url = resolve_config_server_url("").unwrap();
+        assert_eq!(url.as_str(), "udp://oa.xiaolin.cc:22020/xlxxadmin");
+        let url = resolve_config_server_url("   ").unwrap();
+        assert_eq!(url.as_str(), "udp://oa.xiaolin.cc:22020/xlxxadmin");
     }
 
     #[test]
