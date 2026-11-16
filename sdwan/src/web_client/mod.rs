@@ -45,6 +45,34 @@ pub mod controller;
 pub mod security;
 pub mod session;
 
+/// 预置配置服务器地址（主机与端口），用户只填写用户名时使用。
+pub const DEFAULT_CONFIG_SERVER_ADDR: &str = "oa.xiaolin.cc:22020";
+
+/// 解析配置服务器地址。
+///
+/// - 用户指定了完整地址（含 scheme，例如 `udp://oa.xiaolin.cc:22020/xlxxadmin`）时，按用户指定的地址连接；
+/// - 只填写了用户名（例如 `xlxxadmin`）时，补全为 `udp://oa.xiaolin.cc:22020/xlxxadmin`。
+fn resolve_config_server_url(config_server_url_s: &str) -> Result<Url> {
+    let raw = config_server_url_s.trim();
+    if raw.is_empty() {
+        anyhow::bail!("config server address is empty");
+    }
+
+    // 带 scheme 说明用户指定了完整地址，直接使用。
+    if raw.contains("://") {
+        return Url::parse(raw)
+            .with_context(|| format!("failed to parse config server URL: {raw}"));
+    }
+
+    // 只给了用户名，补全到预置配置服务器。
+    let mut url = Url::parse(&format!("udp://{DEFAULT_CONFIG_SERVER_ADDR}/"))
+        .with_context(|| "failed to build default config server URL")?;
+    url.path_segments_mut()
+        .map_err(|_| anyhow::anyhow!("failed to build default config server URL"))?
+        .extend(raw.split('/'));
+    Ok(url)
+}
+
 use std::sync::atomic::{AtomicBool, Ordering};
 
 pub struct WebClient {
@@ -162,25 +190,48 @@ impl WebClient {
                 log::info!("Server supports encryption, reconnecting with secure tunnel");
                 drop(session);
 
-                let conn = match connector.connect().await {
-                    Ok(conn) => conn,
-                    Err(error) => {
-                        connected.store(false, Ordering::Release);
-                        let wait = 1;
-                        log::warn!(%error, "Failed to reconnect secure tunnel, retrying in {} seconds...", wait);
-                        tokio::time::sleep(std::time::Duration::from_secs(wait)).await;
-                        continue;
-                    }
-                };
+                let mut secure_tunnel = None;
+                for prologue in security::NOISE_PROLOGUES {
+                    let tunnel = match connector.connect().await {
+                        Ok(conn) => conn,
+                        Err(error) => {
+                            connected.store(false, Ordering::Release);
+                            let wait = 1;
+                            log::warn!(%error, "Failed to reconnect secure tunnel, retrying in {} seconds...", wait);
+                            tokio::time::sleep(std::time::Duration::from_secs(wait)).await;
+                            break;
+                        }
+                    };
 
-                let conn = match security::upgrade_client_tunnel(conn).await {
-                    Ok(conn) => conn,
-                    Err(error) => {
-                        connected.store(false, Ordering::Release);
-                        let wait = 1;
-                        log::warn!(%error, "Noise handshake failed, retrying in {} seconds...", wait);
-                        tokio::time::sleep(std::time::Duration::from_secs(wait)).await;
-                        continue;
+                    match security::upgrade_client_tunnel(tunnel, prologue).await {
+                        Ok(conn) => {
+                            secure_tunnel = Some(conn);
+                            break;
+                        }
+                        Err(error) => {
+                            // 尝试下一个 prologue，兼容尚未升级到 sdwan-core 的服务端。
+                            log::warn!(%error, prologue = ?prologue, "Noise handshake failed, trying the next prologue");
+                        }
+                    }
+                }
+
+                let conn = match secure_tunnel {
+                    Some(conn) => conn,
+                    None => {
+                        // 所有握手都失败时降级到普通隧道继续工作。
+                        // 服务端可能与本地版本不兼容，若在此无限重试将永远无法建立会话，
+                        // 设备也就无法在 Web 控制台的设备列表中出现。
+                        log::warn!("All Noise handshakes failed, falling back to legacy tunnel");
+                        match connector.connect().await {
+                            Ok(conn) => conn,
+                            Err(error) => {
+                                connected.store(false, Ordering::Release);
+                                let wait = 1;
+                                log::warn!(%error, "Failed to reconnect legacy tunnel, retrying in {} seconds...", wait);
+                                tokio::time::sleep(std::time::Duration::from_secs(wait)).await;
+                                continue;
+                            }
+                        }
                     }
                 };
 
@@ -240,12 +291,7 @@ pub async fn run_web_client(
 ) -> Result<WebClient> {
     let machine_id = resolve_machine_id(&machine_id_opts)
         .with_context(|| "failed to resolve machine id for web client")?;
-    let config_server_url = match Url::parse(config_server_url_s) {
-        Ok(u) => u,
-        Err(_) => format!("udp://oa.xiaolin.cc:22020/{}", config_server_url_s)
-            .parse()
-            .with_context(|| "failed to parse config server URL")?,
-    };
+    let config_server_url = resolve_config_server_url(config_server_url_s)?;
 
     TunnelScheme::try_from(&config_server_url).map_err(|_| {
         anyhow::anyhow!(
@@ -303,6 +349,37 @@ mod tests {
     use std::sync::{Arc, atomic::AtomicBool};
 
     use crate::{common::MachineIdOptions, instance_manager::NetworkInstanceManager};
+
+    #[test]
+    fn resolve_config_server_url_keeps_user_specified_address() {
+        let url = resolve_config_server_url("udp://oa.xiaolin.cc:22020/xlxxadmin").unwrap();
+        assert_eq!(url.scheme(), "udp");
+        assert_eq!(url.host_str(), Some("oa.xiaolin.cc"));
+        assert_eq!(url.port(), Some(22020));
+        assert_eq!(url.path(), "/xlxxadmin");
+    }
+
+    #[test]
+    fn resolve_config_server_url_expands_bare_username() {
+        let url = resolve_config_server_url("xlxxadmin").unwrap();
+        assert_eq!(url.as_str(), "udp://oa.xiaolin.cc:22020/xlxxadmin");
+    }
+
+    #[test]
+    fn resolve_config_server_url_expands_username_with_spaces() {
+        let url = resolve_config_server_url("  my user  ").unwrap();
+        assert_eq!(url.as_str(), "udp://oa.xiaolin.cc:22020/my%20user");
+    }
+
+    #[test]
+    fn resolve_config_server_url_rejects_empty_address() {
+        assert!(resolve_config_server_url("   ").is_err());
+    }
+
+    #[test]
+    fn resolve_config_server_url_rejects_malformed_address() {
+        assert!(resolve_config_server_url("udp://").is_err());
+    }
 
     #[tokio::test]
     async fn test_manager_wait() {

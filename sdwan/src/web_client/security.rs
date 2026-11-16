@@ -17,6 +17,14 @@ use crate::{
 
 const NOISE_MAGIC: &[u8] = b"ET_WEB_NOISE_V1:";
 const NOISE_PROLOGUE: &[u8] = b"sdwan-webclient-noise-v1";
+/// 上游 EasyTier 使用的 Noise prologue。
+///
+/// sdwan 由 easytier 改名而来，改名时该 prologue 被一并修改，导致 sdwan 客户端与
+/// 尚未升级到 sdwan-core 的服务端握手失败（read noise msg2 failed: decrypt error）。
+/// 这里保留旧值用于兼容这类服务端。
+const LEGACY_NOISE_PROLOGUE: &[u8] = b"easytier-webclient-noise-v1";
+/// 握手时依次尝试的 Noise prologue，按优先级排列。
+pub const NOISE_PROLOGUES: &[&[u8]] = &[NOISE_PROLOGUE, LEGACY_NOISE_PROLOGUE];
 const NOISE_PATTERN: &str = "Noise_NN_25519_ChaChaPoly_SHA256";
 const WEB_SECURE_CIPHER_ALGORITHM: &str = "aes-gcm";
 const WEB_SESSION_GENERATION: u32 = 1;
@@ -200,6 +208,7 @@ fn wrap_secure_tunnel(
 
 pub async fn upgrade_client_tunnel(
     tunnel: Box<dyn Tunnel>,
+    prologue: &[u8],
 ) -> Result<Box<dyn Tunnel>, TunnelError> {
     let web_cipher_algorithm = web_secure_cipher_algorithm()?;
     let info = tunnel.info();
@@ -209,7 +218,7 @@ pub async fn upgrade_client_tunnel(
         .parse()
         .map_err(|e| TunnelError::InternalError(format!("parse noise params failed: {e}")))?;
     let mut state = Builder::new(params)
-        .prologue(NOISE_PROLOGUE)
+        .prologue(prologue)
         .map_err(|e| TunnelError::InternalError(format!("set prologue failed: {e}")))?
         .build_initiator()
         .map_err(|e| TunnelError::InternalError(format!("build initiator failed: {e}")))?;

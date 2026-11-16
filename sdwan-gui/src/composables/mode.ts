@@ -1,5 +1,5 @@
 import { type } from '@tauri-apps/plugin-os';
-import { SDWAN_CONFIG_SERVER_URL } from './sdwan';
+import { resolveConfigServerUrl } from './sdwan';
 
 export interface WebClientConfig {
     config_server_url?: string
@@ -32,15 +32,12 @@ export function saveMode(mode: Mode) {
 }
 
 
-// SDWAN: 未设置配置服务器时，使用内置的预置地址
+// SDWAN: 未设置配置服务器时使用预置地址；只填用户名时补全为预置配置服务器地址
 function withDefaultConfigServer(mode: Mode): Mode {
     if (mode.mode === 'remote') {
         return mode
     }
-    if (!mode.config_server_url) {
-        return { ...mode, config_server_url: SDWAN_CONFIG_SERVER_URL }
-    }
-    return mode
+    return { ...mode, config_server_url: resolveConfigServerUrl(mode.config_server_url) }
 }
 
 export function loadMode(): Mode {

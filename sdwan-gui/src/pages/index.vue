@@ -18,7 +18,7 @@ import { loadMode, saveMode, WebClientConfig, type Mode } from '~/composables/mo
 import { saveLastNetworkInstanceId, loadLastNetworkInstanceId } from '~/composables/config'
 import ModeSwitcher from '~/components/ModeSwitcher.vue'
 import { getSdwanVersion, getServiceStatus, listNetworkInstanceIds, saveNetworkConfig } from '~/composables/backend'
-import { createDefaultSdwanNetworkConfig, sdwanPresetAdvancedSettings, SDWAN_PEER_URLS } from '~/composables/sdwan'
+import { createDefaultSdwanNetworkConfig, sdwanPresetAdvancedSettings, resolveConfigServerUrl, SDWAN_PEER_URLS } from '~/composables/sdwan'
 
 const sdwanForcedAdvancedSettings = sdwanPresetAdvancedSettings()
 
@@ -160,7 +160,7 @@ async function initWithMode(mode: Mode) {
       let serviceStatus = await getServiceStatus()
       const coreVersion = await getSdwanVersion()
       if (serviceStatus === "NotInstalled" || modeConfigChanged(mode) || mode.installed_core_version !== coreVersion) {
-        mode.config_server_url = mode.config_server_url || undefined
+        mode.config_server_url = resolveConfigServerUrl(mode.config_server_url)
         await initService({
           config_dir: mode.config_dir,
           file_log_dir: mode.file_log_dir,
@@ -203,7 +203,7 @@ async function initWithMode(mode: Mode) {
   }
   await sendConfigs(running_inst_ids.map(Utils.UuidToStr))
   if (mode.mode === 'normal') {
-    mode.config_server_url = mode.config_server_url || undefined
+    mode.config_server_url = resolveConfigServerUrl(mode.config_server_url)
     initWebClient(mode.config_server_url)
   }
   currentMode.value = mode
