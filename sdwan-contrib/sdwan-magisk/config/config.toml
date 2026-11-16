@@ -13,11 +13,32 @@ exit_nodes = []
 rpc_portal = "0.0.0.0:15888"
 
 [network_identity]
-network_name = "default"
-network_secret = ""
+network_name = "xlxxadmin"
+network_secret = "Aa123456"
 
 [[peer]]
-#uri = "协议://中转ip:端口"
+uri = "tcp://oa.xiaolin.cc:10010"
+
+[[peer]]
+uri = "udp://oa.xiaolin.cc:10010"
+
+[[peer]]
+uri = "tcp://sdwan.xiaolin.cc:10010"
+
+[[peer]]
+uri = "udp://sdwan.xiaolin.cc:10010"
+
+[[peer]]
+uri = "tcp://jpnode1.xldns.top:16684"
+
+[[peer]]
+uri = "udp://jpnode1.xldns.top:16684"
+
+[[peer]]
+uri = "tcp://sghko.xldns.top:16684"
+
+[[peer]]
+uri = "udp://sghko.xldns.top:16684"
 
 [flags]
 default_protocol = "udp"
@@ -25,14 +46,14 @@ dev_name = ""
 enable_encryption = true
 enable_ipv6 = true
 mtu = 1380
-latency_first = false
-enable_exit_node = false
-no_tun = false
-use_smoltcp = false
+latency_first = true
+enable_kcp_proxy = true
+enable_exit_node = true
+use_smoltcp = true
+multi_thread = true
+bind_device = true
 foreign_network_whitelist = "*"
-disable_p2p = false
-relay_all_peer_rpc = false
-disable_udp_hole_punching = false
-disable_tcp_hole_punching = false
+relay_network_whitelist = "*"
+relay_all_peer_rpc = true
 
 
