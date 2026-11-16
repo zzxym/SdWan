@@ -1,5 +1,5 @@
-import { type } from '@tauri-apps/plugin-os';
 import { resolveConfigServerUrl } from './sdwan';
+import { safeOsType } from './preview';
 
 export interface WebClientConfig {
     config_server_url?: string
@@ -44,7 +44,7 @@ export function loadMode(): Mode {
     const modeStr = localStorage.getItem('app_mode')
     if (modeStr) {
         let mode = JSON.parse(modeStr) as Mode
-        if (type() === 'android') {
+        if (safeOsType() === 'android') {
             return withDefaultConfigServer({ ...mode, mode: 'normal' })
         }
         return withDefaultConfigServer(mode)

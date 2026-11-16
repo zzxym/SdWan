@@ -434,6 +434,19 @@ config-server:
 client:
   not_running: Unable to connect to remote client.
   retry: Retry
+  status_title: Client Status
+  status_client: Client
+  status_running: Running
+  status_stopped: Not Running
+  status_web_console: Web Console
+  status_web_connected: Connected
+  status_web_disconnected: Disconnected
+  status_version: Client Version
+  status_instance_count: Running Instances
+  status_select_instance: Network Instance
+  status_instance_title: Network Instance
+  status_no_instance: No running network instance. Please configure and start it from the web console.
+  read_only_notice: This client is managed by the web console and cannot be configured locally.
 
 acl:
   title: Access Control (ACL)

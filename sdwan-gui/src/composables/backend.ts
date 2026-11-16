@@ -12,10 +12,22 @@ interface ServiceOptions {
   rpc_portal: string
   file_log_level: string
   file_log_dir: string
-  config_server?: string
+  config_server?: string;
 }
 
 export type ServiceStatus = "Running" | "Stopped" | "NotInstalled"
+
+/**
+ * SDWAN 精简客户端为只读模式。
+ *
+ * 网络配置只能由 Web 控制台（sdwan-web）通过 RPC 下发，GUI 侧不提供任何写入能力，
+ * 因此这里的写入类入口统一拒绝，避免出现可被本地绕过的配置后门。
+ */
+export const READ_ONLY_ERROR = 'This SDWAN client is read-only: network configuration must be issued from the web console.'
+
+function rejectReadOnly(): never {
+  throw new Error(READ_ONLY_ERROR)
+}
 
 interface StoredGuiConfig {
   config: NetworkConfig
@@ -50,18 +62,9 @@ function parseStoredConfigs(raw: string | null): StoredGuiConfig[] {
   })
 }
 
-export async function parseNetworkConfig(cfg: NetworkConfig) {
-  return invoke<string>('parse_network_config', { cfg: NetworkTypes.toBackendNetworkConfig(cfg) })
-}
-
-export async function generateNetworkConfig(tomlConfig: string) {
-  const config = await invoke<NetworkConfig>('generate_network_config', { tomlConfig })
-  return NetworkTypes.normalizeNetworkConfig(config)
-}
-
-export async function runNetworkInstance(cfg: NetworkConfig, save: boolean) {
-  return invoke('run_network_instance', { cfg: NetworkTypes.toBackendNetworkConfig(cfg), save })
-}
+// ---------------------------------------------------------------------------
+// 只读接口：状态查询与运行时管理
+// ---------------------------------------------------------------------------
 
 export async function collectNetworkInfo(instanceId: string) {
   return await invoke<Api.CollectNetworkInfoResponse>('collect_network_info', { instanceId })
@@ -83,27 +86,18 @@ export async function listNetworkInstanceIds() {
   return await invoke<ListNetworkInstanceIdResponse>('list_network_instance_ids')
 }
 
-export async function deleteNetworkInstance(instanceId: string) {
-  return await invoke('remove_network_instance', { instanceId })
-}
-
-export async function updateNetworkConfigState(instanceId: string, disabled: boolean) {
-  return await invoke('update_network_config_state', { instanceId, disabled })
-}
-
-export async function saveNetworkConfig(cfg: NetworkConfig) {
-  return await invoke('save_network_config', { cfg: NetworkTypes.toBackendNetworkConfig(cfg) })
-}
-
-export async function validateConfig(cfg: NetworkConfig) {
-  return await invoke<ValidateConfigResponse>('validate_config', { cfg: NetworkTypes.toBackendNetworkConfig(cfg) })
-}
-
 export async function getConfig(instanceId: string) {
   const config = await invoke<NetworkConfig>('get_config', { instanceId })
   return NetworkTypes.normalizeNetworkConfig(config)
 }
 
+export async function getNetworkMetas(instanceIds: string[]) {
+  return await invoke<GetNetworkMetasResponse>('get_network_metas', { instanceIds })
+}
+
+/**
+ * 恢复上次由 Web 控制台下发的网络配置（本地仅作镜像，不做本地编辑）。
+ */
 export async function sendConfigs(enabledNetworks: string[]) {
   const networkList = parseStoredConfigs(localStorage.getItem('networkList'))
   return await invoke('load_configs', {
@@ -113,10 +107,6 @@ export async function sendConfigs(enabledNetworks: string[]) {
     })),
     enabledNetworks
   })
-}
-
-export async function getNetworkMetas(instanceIds: string[]) {
-  return await invoke<GetNetworkMetasResponse>('get_network_metas', { instanceIds })
 }
 
 export async function initService(opts?: ServiceOptions) {
@@ -145,4 +135,36 @@ export async function initWebClient(url?: string) {
 
 export async function isWebClientConnected() {
   return await invoke<boolean>('is_web_client_connected')
+}
+
+// ---------------------------------------------------------------------------
+// 写入类接口：只读客户端一律拒绝
+// ---------------------------------------------------------------------------
+
+export async function parseNetworkConfig(_cfg: NetworkConfig): Promise<string> {
+  return rejectReadOnly()
+}
+
+export async function generateNetworkConfig(_tomlConfig: string): Promise<NetworkConfig> {
+  return rejectReadOnly()
+}
+
+export async function runNetworkInstance(_cfg: NetworkConfig, _save: boolean): Promise<void> {
+  return rejectReadOnly()
+}
+
+export async function deleteNetworkInstance(_instanceId: string): Promise<void> {
+  return rejectReadOnly()
+}
+
+export async function updateNetworkConfigState(_instanceId: string, _disabled: boolean): Promise<void> {
+  return rejectReadOnly()
+}
+
+export async function saveNetworkConfig(_cfg: NetworkConfig): Promise<void> {
+  return rejectReadOnly()
+}
+
+export async function validateConfig(_cfg: NetworkConfig): Promise<ValidateConfigResponse> {
+  return rejectReadOnly()
 }

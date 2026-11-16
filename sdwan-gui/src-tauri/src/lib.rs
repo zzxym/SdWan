@@ -5,8 +5,7 @@ mod elevate;
 
 use anyhow::Context;
 use sdwan::proto::api::manage::{
-    CollectNetworkInfoResponse, ValidateConfigResponse, WebClientService,
-    WebClientServiceClientFactory,
+    CollectNetworkInfoResponse, WebClientService, WebClientServiceClientFactory,
 };
 use sdwan::rpc_service::remote_client::{
     GetNetworkMetasResponse, ListNetworkInstanceIdsJsonResp, ListNetworkProps, RemoteClientManager,
@@ -99,40 +98,6 @@ fn set_dock_visibility(app: tauri::AppHandle, visible: bool) -> Result<(), Strin
 }
 
 #[tauri::command]
-fn parse_network_config(cfg: NetworkConfig) -> Result<String, String> {
-    let toml = cfg.gen_config().map_err(|e| e.to_string())?;
-    Ok(toml.dump())
-}
-
-#[tauri::command]
-fn generate_network_config(toml_config: String) -> Result<NetworkConfig, String> {
-    let config = TomlConfigLoader::new_from_str(&toml_config).map_err(|e| e.to_string())?;
-    let cfg = NetworkConfig::new_from_config(&config).map_err(|e| e.to_string())?;
-    Ok(cfg)
-}
-
-#[tauri::command]
-async fn run_network_instance(
-    app: AppHandle,
-    cfg: NetworkConfig,
-    save: bool,
-) -> Result<(), String> {
-    let client_manager = get_client_manager!()?;
-    let toml_config = cfg.gen_config().map_err(|e| e.to_string())?;
-    client_manager
-        .pre_run_network_instance_hook(&app, &toml_config, manager::PersistedConfigSource::User)
-        .await?;
-    client_manager
-        .handle_run_network_instance(app.clone(), cfg, save)
-        .await
-        .map_err(|e| e.to_string())?;
-    client_manager
-        .post_run_network_instance_hook(&app, &toml_config.get_id())
-        .await?;
-    Ok(())
-}
-
-#[tauri::command]
 async fn collect_network_info(
     app: AppHandle,
     instance_id: String,
@@ -177,88 +142,6 @@ async fn list_network_instance_ids(
 ) -> Result<ListNetworkInstanceIdsJsonResp, String> {
     get_client_manager!()?
         .handle_list_network_instance_ids(app)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn remove_network_instance(app: AppHandle, instance_id: String) -> Result<(), String> {
-    let instance_id = instance_id
-        .parse()
-        .map_err(|e: uuid::Error| e.to_string())?;
-    let client_manager = get_client_manager!()?;
-    client_manager
-        .handle_remove_network_instances(app.clone(), vec![instance_id])
-        .await
-        .map_err(|e| e.to_string())?;
-    client_manager
-        .post_stop_network_instances_hook(&app)
-        .await?;
-
-    Ok(())
-}
-
-#[tauri::command]
-async fn update_network_config_state(
-    app: AppHandle,
-    instance_id: String,
-    disabled: bool,
-) -> Result<(), String> {
-    let instance_id = instance_id
-        .parse()
-        .map_err(|e: uuid::Error| e.to_string())?;
-    let client_manager = get_client_manager!()?;
-    if !disabled {
-        let (cfg, source) = client_manager
-            .handle_get_network_config_with_source(app.clone(), instance_id)
-            .await
-            .map_err(|e| e.to_string())?;
-        let toml_config = cfg.gen_config().map_err(|e| e.to_string())?;
-        client_manager
-            .pre_run_network_instance_hook(
-                &app,
-                &toml_config,
-                manager::PersistedConfigSource::from_runtime_source(source),
-            )
-            .await?;
-    }
-    client_manager
-        .handle_update_network_state(app.clone(), instance_id, disabled)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    if disabled {
-        client_manager
-            .post_stop_network_instances_hook(&app)
-            .await?;
-    } else {
-        client_manager
-            .post_run_network_instance_hook(&app, &instance_id)
-            .await?;
-    }
-
-    Ok(())
-}
-
-#[tauri::command]
-async fn save_network_config(app: AppHandle, cfg: NetworkConfig) -> Result<(), String> {
-    let instance_id = cfg
-        .instance_id()
-        .parse()
-        .map_err(|e: uuid::Error| e.to_string())?;
-    get_client_manager!()?
-        .handle_save_network_config(app, instance_id, cfg)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn validate_config(
-    app: AppHandle,
-    config: NetworkConfig,
-) -> Result<ValidateConfigResponse, String> {
-    get_client_manager!()?
-        .handle_validate_config(app, config)
         .await
         .map_err(|e| e.to_string())
 }
@@ -1064,14 +947,6 @@ mod manager {
             Ok(())
         }
 
-        pub(super) async fn post_stop_network_instances_hook(
-            &self,
-            app: &AppHandle,
-        ) -> Result<(), String> {
-            self.notify_vpn_stop_if_no_tun(app)?;
-            Ok(())
-        }
-
         fn get_logger_rpc_client(
             &self,
         ) -> Option<Box<dyn LoggerRpc<Controller = BaseController> + Send>> {
@@ -1364,19 +1239,12 @@ pub fn run_gui() -> std::process::ExitCode {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            parse_network_config,
-            generate_network_config,
-            run_network_instance,
             collect_network_info,
             set_logging_level,
             set_tun_fd,
             sdwan_version,
             set_dock_visibility,
             list_network_instance_ids,
-            remove_network_instance,
-            update_network_config_state,
-            save_network_config,
-            validate_config,
             get_config,
             load_configs,
             get_network_metas,

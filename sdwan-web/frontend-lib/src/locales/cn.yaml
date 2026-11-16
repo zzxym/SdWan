@@ -434,6 +434,19 @@ config-server:
 client:
   not_running: 无法连接至远程客户端
   retry: 重试
+  status_title: 客户端状态
+  status_client: 客户端
+  status_running: 运行中
+  status_stopped: 未运行
+  status_web_console: Web 控制台
+  status_web_connected: 已连接
+  status_web_disconnected: 未连接
+  status_version: 客户端版本
+  status_instance_count: 运行实例
+  status_select_instance: 网络实例
+  status_instance_title: 网络实例
+  status_no_instance: 当前没有运行中的网络实例，请在 Web 控制台中配置并启动。
+  read_only_notice: 本客户端由 Web 控制台统一管控，无法在本地进行配置。
 
 acl:
   title: 访问控制

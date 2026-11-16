@@ -9,7 +9,13 @@ declare global {
   const EffectScope: typeof import('vue')['EffectScope']
   const MenuItemExit: typeof import('./composables/tray')['MenuItemExit']
   const MenuItemShow: typeof import('./composables/tray')['MenuItemShow']
+  const PREVIEW_DISABLED_INSTANCE_ID: typeof import('./composables/preview')['PREVIEW_DISABLED_INSTANCE_ID']
+  const PREVIEW_INSTANCES: typeof import('./composables/preview')['PREVIEW_INSTANCES']
+  const PREVIEW_INSTANCE_ID: typeof import('./composables/preview')['PREVIEW_INSTANCE_ID']
+  const READ_ONLY_ERROR: typeof import('./composables/backend')['READ_ONLY_ERROR']
+  const SDWAN_CONFIG_SERVER_ADDR: typeof import('./composables/sdwan')['SDWAN_CONFIG_SERVER_ADDR']
   const SDWAN_CONFIG_SERVER_URL: typeof import('./composables/sdwan')['SDWAN_CONFIG_SERVER_URL']
+  const SDWAN_CONFIG_SERVER_USER: typeof import('./composables/sdwan')['SDWAN_CONFIG_SERVER_USER']
   const SDWAN_LISTENER_URLS: typeof import('./composables/sdwan')['SDWAN_LISTENER_URLS']
   const SDWAN_NETWORK_NAME: typeof import('./composables/sdwan')['SDWAN_NETWORK_NAME']
   const SDWAN_NETWORK_SECRET: typeof import('./composables/sdwan')['SDWAN_NETWORK_SECRET']
@@ -32,8 +38,8 @@ declare global {
   const getConfig: typeof import('./composables/backend')['getConfig']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
-  const getSdwanVersion: typeof import('./composables/backend')['getSdwanVersion']
   const getNetworkMetas: typeof import('./composables/backend')['getNetworkMetas']
+  const getSdwanVersion: typeof import('./composables/backend')['getSdwanVersion']
   const getServiceStatus: typeof import('./composables/backend')['getServiceStatus']
   const h: typeof import('vue')['h']
   const initMobileVpnService: typeof import('./composables/mobile_vpn')['initMobileVpnService']
@@ -42,6 +48,7 @@ declare global {
   const initWebClient: typeof import('./composables/backend')['initWebClient']
   const inject: typeof import('vue')['inject']
   const isClientRunning: typeof import('./composables/backend')['isClientRunning']
+  const isPreviewMode: typeof import('./composables/preview')['isPreviewMode']
   const isProxy: typeof import('vue')['isProxy']
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
@@ -77,12 +84,15 @@ declare global {
   const onWatcherCleanup: typeof import('vue')['onWatcherCleanup']
   const parseNetworkConfig: typeof import('./composables/backend')['parseNetworkConfig']
   const prepareVpnService: typeof import('./composables/mobile_vpn')['prepareVpnService']
+  const previewNetworkInfo: typeof import('./composables/preview')['previewNetworkInfo']
   const provide: typeof import('vue')['provide']
   const reactive: typeof import('vue')['reactive']
   const readonly: typeof import('vue')['readonly']
   const ref: typeof import('vue')['ref']
   const resolveComponent: typeof import('vue')['resolveComponent']
+  const resolveConfigServerUrl: typeof import('./composables/sdwan')['resolveConfigServerUrl']
   const runNetworkInstance: typeof import('./composables/backend')['runNetworkInstance']
+  const safeOsType: typeof import('./composables/preview')['safeOsType']
   const saveLastNetworkInstanceId: typeof import('./composables/config')['saveLastNetworkInstanceId']
   const saveMode: typeof import('./composables/mode')['saveMode']
   const saveNetworkConfig: typeof import('./composables/backend')['saveNetworkConfig']
@@ -141,7 +151,13 @@ declare module 'vue' {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly MenuItemExit: UnwrapRef<typeof import('./composables/tray')['MenuItemExit']>
     readonly MenuItemShow: UnwrapRef<typeof import('./composables/tray')['MenuItemShow']>
+    readonly PREVIEW_DISABLED_INSTANCE_ID: UnwrapRef<typeof import('./composables/preview')['PREVIEW_DISABLED_INSTANCE_ID']>
+    readonly PREVIEW_INSTANCES: UnwrapRef<typeof import('./composables/preview')['PREVIEW_INSTANCES']>
+    readonly PREVIEW_INSTANCE_ID: UnwrapRef<typeof import('./composables/preview')['PREVIEW_INSTANCE_ID']>
+    readonly READ_ONLY_ERROR: UnwrapRef<typeof import('./composables/backend')['READ_ONLY_ERROR']>
+    readonly SDWAN_CONFIG_SERVER_ADDR: UnwrapRef<typeof import('./composables/sdwan')['SDWAN_CONFIG_SERVER_ADDR']>
     readonly SDWAN_CONFIG_SERVER_URL: UnwrapRef<typeof import('./composables/sdwan')['SDWAN_CONFIG_SERVER_URL']>
+    readonly SDWAN_CONFIG_SERVER_USER: UnwrapRef<typeof import('./composables/sdwan')['SDWAN_CONFIG_SERVER_USER']>
     readonly SDWAN_LISTENER_URLS: UnwrapRef<typeof import('./composables/sdwan')['SDWAN_LISTENER_URLS']>
     readonly SDWAN_NETWORK_NAME: UnwrapRef<typeof import('./composables/sdwan')['SDWAN_NETWORK_NAME']>
     readonly SDWAN_NETWORK_SECRET: UnwrapRef<typeof import('./composables/sdwan')['SDWAN_NETWORK_SECRET']>
@@ -164,8 +180,8 @@ declare module 'vue' {
     readonly getConfig: UnwrapRef<typeof import('./composables/backend')['getConfig']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
-    readonly getSdwanVersion: UnwrapRef<typeof import('./composables/backend')['getSdwanVersion']>
     readonly getNetworkMetas: UnwrapRef<typeof import('./composables/backend')['getNetworkMetas']>
+    readonly getSdwanVersion: UnwrapRef<typeof import('./composables/backend')['getSdwanVersion']>
     readonly getServiceStatus: UnwrapRef<typeof import('./composables/backend')['getServiceStatus']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly initMobileVpnService: UnwrapRef<typeof import('./composables/mobile_vpn')['initMobileVpnService']>
@@ -174,6 +190,7 @@ declare module 'vue' {
     readonly initWebClient: UnwrapRef<typeof import('./composables/backend')['initWebClient']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly isClientRunning: UnwrapRef<typeof import('./composables/backend')['isClientRunning']>
+    readonly isPreviewMode: UnwrapRef<typeof import('./composables/preview')['isPreviewMode']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
@@ -209,12 +226,15 @@ declare module 'vue' {
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
     readonly parseNetworkConfig: UnwrapRef<typeof import('./composables/backend')['parseNetworkConfig']>
     readonly prepareVpnService: UnwrapRef<typeof import('./composables/mobile_vpn')['prepareVpnService']>
+    readonly previewNetworkInfo: UnwrapRef<typeof import('./composables/preview')['previewNetworkInfo']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
+    readonly resolveConfigServerUrl: UnwrapRef<typeof import('./composables/sdwan')['resolveConfigServerUrl']>
     readonly runNetworkInstance: UnwrapRef<typeof import('./composables/backend')['runNetworkInstance']>
+    readonly safeOsType: UnwrapRef<typeof import('./composables/preview')['safeOsType']>
     readonly saveLastNetworkInstanceId: UnwrapRef<typeof import('./composables/config')['saveLastNetworkInstanceId']>
     readonly saveMode: UnwrapRef<typeof import('./composables/mode')['saveMode']>
     readonly saveNetworkConfig: UnwrapRef<typeof import('./composables/backend')['saveNetworkConfig']>

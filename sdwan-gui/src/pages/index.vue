@@ -1,124 +1,46 @@
 <script setup lang="ts">
-
-import { type } from '@tauri-apps/plugin-os'
-
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { open } from '@tauri-apps/plugin-shell'
 import { exit } from '@tauri-apps/plugin-process'
-import { I18nUtils, RemoteManagement, Utils } from "sdwan-frontend-lib"
+import { I18nUtils, Utils } from "sdwan-frontend-lib"
 import type { MenuItem } from 'primevue/menuitem'
 import { useTray } from '~/composables/tray'
 import { initMobileVpnService } from '~/composables/mobile_vpn'
 import { GUIRemoteClient } from '~/modules/api'
 
-import { useToast, useConfirm } from 'primevue'
-import { loadMode, saveMode, WebClientConfig, type Mode } from '~/composables/mode'
-import { saveLastNetworkInstanceId, loadLastNetworkInstanceId } from '~/composables/config'
-import ModeSwitcher from '~/components/ModeSwitcher.vue'
-import { getSdwanVersion, getServiceStatus, listNetworkInstanceIds, saveNetworkConfig } from '~/composables/backend'
-import { createDefaultSdwanNetworkConfig, sdwanPresetAdvancedSettings, resolveConfigServerUrl, SDWAN_PEER_URLS } from '~/composables/sdwan'
+import { useToast } from 'primevue'
+import { loadMode, saveMode, type Mode } from '~/composables/mode'
+import ClientStatusPanel from '~/components/ClientStatusPanel.vue'
+import {
+  getSdwanVersion,
+  getServiceStatus,
+  initRpcConnection,
+  initWebClient,
+  isClientRunning,
+  sendConfigs,
+} from '~/composables/backend'
+import { resolveConfigServerUrl } from '~/composables/sdwan'
+import { isPreviewMode, safeOsType } from '~/composables/preview'
 
-const sdwanForcedAdvancedSettings = sdwanPresetAdvancedSettings()
-
+/**
+ * SDWAN 精简客户端（只读）
+ *
+ * - 界面仅用于展示运行状态：未运行，或运行中及其详情
+ * - 不提供任何本地配置入口：新建/编辑/删除/启停网络全部由 Web 控制台下发
+ * - 客户端启动后仍会注册到配置服务器，使其可被 Web 控制台发现与管控
+ */
 const { t, locale } = useI18n()
-const confirm = useConfirm()
-const aboutVisible = ref(false)
-const modeDialogVisible = ref(false)
+const toast = useToast()
 const currentMode = ref<Mode>({ mode: 'normal' })
-const editingMode = ref<Mode>({ mode: 'normal' })
-const isModeSaving = ref(false)
+const isReconnecting = ref(false)
 const manualDisconnect = ref(false)
 
-const configServerDialogVisible = ref(false)
-const configServerConnected = ref(false)
-
-async function openModeDialog() {
-  editingMode.value = JSON.parse(JSON.stringify(loadMode()))
-  modeDialogVisible.value = true
-}
-
-async function onModeSave() {
-  if (isModeSaving.value) {
-    return;
-  }
-  isModeSaving.value = true
-  try {
-    await initWithMode(editingMode.value);
-    modeDialogVisible.value = false
-  }
-  catch (e: any) {
-    toast.add({ severity: 'error', summary: t('error'), detail: e, life: 10000 })
-    console.error("Error switching mode", e, currentMode.value, editingMode.value)
-    await initWithMode(currentMode.value);
-  }
-  finally {
-    isModeSaving.value = false
-  }
-}
-
-async function onUninstallService() {
-  confirm.require({
-    message: t('mode.uninstall_service_confirm'),
-    header: t('mode.uninstall_service'),
-    icon: 'pi pi-exclamation-triangle',
-    rejectProps: {
-      label: t('web.common.cancel'),
-      severity: 'secondary',
-      outlined: true
-    },
-    acceptProps: {
-      label: t('mode.uninstall_service'),
-      severity: 'danger'
-    },
-    accept: async () => {
-      isModeSaving.value = true
-      try {
-        await initWithMode({ ...currentMode.value, mode: 'normal' });
-        await initService(undefined)
-        toast.add({ severity: 'success', summary: t('web.common.success'), detail: t('mode.uninstall_service_success'), life: 3000 })
-        modeDialogVisible.value = false
-      } catch (e: any) {
-        toast.add({ severity: 'error', summary: t('error'), detail: e, life: 10000 })
-        console.error("Error uninstalling service", e)
-      } finally {
-        isModeSaving.value = false
-      }
-    },
-  });
-}
-
-function stripModeMetadata(mode: Mode) {
-  if (mode.mode !== 'service') {
-    return mode
-  }
-
-  const serviceConfig = { ...mode }
-  delete serviceConfig.installed_core_version
-  return serviceConfig
-}
-
-function modeConfigChanged(next: Mode) {
-  return JSON.stringify(stripModeMetadata(next)) !== JSON.stringify(stripModeMetadata(currentMode.value))
-}
-
-async function onStopService() {
-  isModeSaving.value = true
-  manualDisconnect.value = true
-  try {
-    await setServiceStatus(false)
-    toast.add({ severity: 'success', summary: t('web.common.success'), detail: t('mode.stop_service_success'), life: 3000 })
-    modeDialogVisible.value = false
-  }
-  catch (e: any) {
-    toast.add({ severity: 'error', summary: t('error'), detail: e, life: 10000 })
-    console.error("Error stopping service", e)
-  }
-  finally {
-    isModeSaving.value = false
-  }
-}
+const remoteClient = computed(() => new GUIRemoteClient());
+const clientRunning = ref(false);
+// 浏览器预览模式：没有 Tauri runtime 时使用演示数据渲染界面
+const previewMode = isPreviewMode();
 
 async function initWithMode(mode: Mode) {
   const running_inst_ids = (await remoteClient.value.list_network_instance_ids().catch(() => undefined))?.running_inst_ids ?? []
@@ -159,7 +81,7 @@ async function initWithMode(mode: Mode) {
       }
       let serviceStatus = await getServiceStatus()
       const coreVersion = await getSdwanVersion()
-      if (serviceStatus === "NotInstalled" || modeConfigChanged(mode) || mode.installed_core_version !== coreVersion) {
+      if (serviceStatus === "NotInstalled" || mode.installed_core_version !== coreVersion) {
         mode.config_server_url = resolveConfigServerUrl(mode.config_server_url)
         await initService({
           config_dir: mode.config_dir,
@@ -214,7 +136,7 @@ async function initWithMode(mode: Mode) {
 onMounted(async () => {
   const cleanupFns: Array<() => void> = []
 
-  if (type() === 'android') {
+  if (safeOsType() === 'android') {
     try {
       await initMobileVpnService()
       console.error("sdwan init vpn service done")
@@ -223,9 +145,18 @@ onMounted(async () => {
     }
   }
 
-  cleanupFns.push(await listenGlobalEvents())
+  try {
+    cleanupFns.push(await listenGlobalEvents())
+  } catch (e) {
+    console.error('Failed to listen global events', e)
+  }
   currentMode.value = loadMode()
-  await initWithMode(currentMode.value);
+  if (previewMode) {
+    clientRunning.value = true
+  }
+  else {
+    await initWithMode(currentMode.value);
+  }
 
   onUnmounted(() => {
     cleanupFns.forEach(unlisten => unlisten())
@@ -233,7 +164,6 @@ onMounted(async () => {
 });
 
 useTray(true)
-let toast = useToast();
 
 // SDWAN: 窗口/任务栏标题固定显示 "SDWAN Gui"
 onMounted(async () => {
@@ -244,16 +174,6 @@ onMounted(async () => {
   }
 })
 
-const remoteClient = computed(() => new GUIRemoteClient());
-const instanceId = ref<string | undefined>(undefined);
-const clientRunning = ref(false);
-
-watch(instanceId, (newVal) => {
-  if (newVal) {
-    saveLastNetworkInstanceId(newVal);
-  }
-});
-
 watch(clientRunning, async (newVal, oldVal) => {
   if (!newVal && oldVal) {
     if (manualDisconnect.value) {
@@ -261,35 +181,13 @@ watch(clientRunning, async (newVal, oldVal) => {
       return
     }
     await reconnectClient()
-  } else if (newVal && !oldVal) {
-    await ensureDefaultSdwanNetwork()
-    const lastInstanceId = loadLastNetworkInstanceId();
-    if (lastInstanceId && !instanceId.value) {
-      instanceId.value = lastInstanceId;
-    }
   }
 })
 
-/**
- * SDWAN: 客户端就绪后，如果本地还没有任何网络配置，
- * 自动按出厂预置（网络名/密码/初始节点）创建并选中，做到开箱即用。
- */
-async function ensureDefaultSdwanNetwork() {
-  try {
-    const ids = await listNetworkInstanceIds()
-    const total = (ids.running_inst_ids?.length ?? 0) + (ids.disabled_inst_ids?.length ?? 0)
-    if (total > 0) {
-      return
-    }
-    const cfg = createDefaultSdwanNetworkConfig()
-    await saveNetworkConfig(cfg)
-    instanceId.value = cfg.instance_id
-  } catch (e) {
-    console.error("Failed to create default sdwan network", e)
-  }
-}
-
 onMounted(async () => {
+  if (previewMode) {
+    return
+  }
   clientRunning.value = await isClientRunning().catch(() => false)
   const timer = setInterval(async () => {
     try {
@@ -304,9 +202,19 @@ onMounted(async () => {
     clearInterval(timer)
   })
 })
+
 async function reconnectClient() {
-  editingMode.value = JSON.parse(JSON.stringify(loadMode()));
-  await onModeSave()
+  if (isReconnecting.value || previewMode) {
+    return
+  }
+  isReconnecting.value = true
+  try {
+    await initWithMode(loadMode())
+  } catch (e: any) {
+    console.error("Error reconnecting client", e)
+  } finally {
+    isReconnecting.value = false
+  }
 }
 
 onMounted(async () => {
@@ -344,7 +252,7 @@ const log_menu_items_popup: Ref<MenuItem[]> = ref([
       // console.log('open log dir', await getLogDirPath())
       await open(await getLogDirPath())
     },
-    visible: () => type() !== 'android',
+    visible: () => safeOsType() !== 'android',
   },
   {
     label: () => t('logging_copy_dir'),
@@ -376,33 +284,10 @@ const setting_menu_items: Ref<MenuItem[]> = ref([
     },
   },
   {
-    label: () => `${t('mode.switch_mode')}: ${t('mode.' + currentMode.value.mode)}`,
-    icon: 'pi pi-sync',
-    command: openModeDialog,
-    // SDWAN: 出厂发行版固定为普通模式，隐藏“切换模式”入口
-    visible: () => false,
-  },
-  {
-    label: () => `${t('config-server.title')}${t('config-server.' + configServerConnectionStatus.value)}`,
-    icon: 'pi pi-globe',
-    command: openConfigServerDialog,
-    // SDWAN: 配置服务器地址为内置预置值，隐藏该入口
-    visible: () => false,
-  },
-  {
     key: 'logging_menu',
     label: () => t('logging'),
     icon: 'pi pi-file',
     items: [], // Keep this to show it's a parent menu
-  },
-  {
-    label: () => t('about.title'),
-    icon: 'pi pi-at',
-    command: async () => {
-      aboutVisible.value = true
-    },
-    // SDWAN: 隐藏“关于”入口
-    visible: () => false,
   },
   {
     label: () => t('exit'),
@@ -417,105 +302,18 @@ async function connectRpcClient(isNormalMode: boolean, url?: string) {
   await initRpcConnection(isNormalMode, url)
   console.log("sdwan rpc connection established, isNormalMode: ", isNormalMode)
 }
-
-async function openConfigServerDialog() {
-  editingMode.value = JSON.parse(JSON.stringify(loadMode()))
-  configServerDialogVisible.value = true
-}
-async function onConfigServerSave() {
-  if (JSON.stringify(currentMode.value) === JSON.stringify(editingMode.value)) {
-    configServerDialogVisible.value = false
-    return;
-  }
-  if (editingMode.value.mode === 'service') {
-    await new Promise<void>((resolve, reject) => {
-      confirm.require({
-        message: t('config-server.update_service_confirm'),
-        icon: 'pi pi-exclamation-triangle',
-        rejectProps: {
-          label: t('web.common.cancel'),
-          severity: 'secondary',
-          outlined: true
-        },
-        acceptProps: {
-          label: t('web.common.confirm'),
-        },
-        accept: async () => {
-          resolve()
-        },
-        reject: () => {
-          reject()
-        }
-      });
-    })
-  }
-  console.log("Saving config server url", (editingMode.value as WebClientConfig).config_server_url)
-  await onModeSave();
-  configServerDialogVisible.value = false
-}
-onMounted(() => {
-  const timer = setInterval(async () => {
-    if (currentMode.value.mode !== 'normal') return;
-    if (!currentMode.value.config_server_url) return;
-    configServerConnected.value = await isWebClientConnected();
-  }, 1000)
-
-  onUnmounted(() => {
-    clearInterval(timer)
-  })
-})
-const configServerConnectionStatus = computed(() => {
-  if (currentMode.value.mode !== 'normal') {
-    return 'unknown'
-  }
-  if (!currentMode.value.config_server_url) {
-    return 'disconnected'
-  }
-  return configServerConnected.value ? 'connected' : 'connecting'
-})
-
 </script>
 
 <template>
   <div id="root" class="flex flex-col">
-    <Dialog v-model:visible="aboutVisible" modal :header="t('about.title')" :style="{ width: '70%' }">
-      <About />
-    </Dialog>
-    <Dialog v-model:visible="modeDialogVisible" modal :header="t('mode.switch_mode')" :style="{ width: '50vw' }">
-      <ModeSwitcher v-model="editingMode" @uninstall-service="onUninstallService" @stop-service="onStopService" />
-      <template #footer>
-        <Button :label="t('web.common.cancel')" icon="pi pi-times" @click="modeDialogVisible = false" text />
-        <Button :label="t('web.common.save')" icon="pi pi-save" @click="onModeSave" autofocus :loading="isModeSaving" />
-      </template>
-    </Dialog>
-
-    <Dialog v-model:visible="configServerDialogVisible" modal :header="t('config-server.title')"
-      :style="{ width: '50vw' }">
-      <div class="flex flex-col gap-3">
-        <label for="config-server-address">{{ t('config-server.address') }}</label>
-        <InputText id="config-server-address" v-model="(editingMode as WebClientConfig).config_server_url"
-          :placeholder="t('config-server.address_placeholder')" />
-        <small class="p-text-secondary whitespace-pre-wrap">{{ t('config-server.description') }}</small>
-      </div>
-      <template #footer>
-        <Button :label="t('web.common.cancel')" icon="pi pi-times" @click="configServerDialogVisible = false" text />
-        <Button :label="t('web.common.save')" icon="pi pi-save" @click="onConfigServerSave" autofocus
-          :loading="isModeSaving" />
-      </template>
-    </Dialog>
-
     <Menu ref="log_menu" :model="log_menu_items_popup" :popup="true" />
 
-    <RemoteManagement v-if="clientRunning" class="flex-1 overflow-y-auto" :api="remoteClient"
-      :new-config-generator="createDefaultSdwanNetworkConfig" :hide-initial-nodes="true"
-      :forced-peer-urls="SDWAN_PEER_URLS" :pause-auto-refresh="isModeSaving"
-      :hide-advanced-settings="true" :forced-advanced-settings="sdwanForcedAdvancedSettings"
-      v-model:instance-id="instanceId" />
+    <ClientStatusPanel v-if="clientRunning" class="flex-1 overflow-y-auto" />
     <div v-else class="empty-state flex-1 flex flex-col items-center py-12">
       <i class="pi pi-server text-5xl text-secondary mb-4 opacity-50"></i>
       <div class="text-xl text-center font-medium mb-3">{{ t('client.not_running') }}
       </div>
-      <Button @click="reconnectClient" :loading="isModeSaving" :label="t('client.retry')" icon="pi pi-replay"
+      <Button @click="reconnectClient" :loading="isReconnecting" :label="t('client.retry')" icon="pi pi-replay"
         iconPos="left" />
     </div>
 
@@ -562,10 +360,4 @@ body {
 .p-select-overlay {
   max-width: calc(100% - 2rem);
 }
-
-/*
-
-.p-tabview-panel {
-  height: 100%;
-} */
 </style>
