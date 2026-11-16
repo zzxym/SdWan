@@ -57,6 +57,12 @@ pub struct Credentials {
 pub struct RegisterNewUser {
     pub credentials: Credentials,
     pub captcha: String,
+    /// 验证码标识，由 `/api/v1/auth/captcha_info` 返回。
+    ///
+    /// 携带该字段时验证码校验不依赖 session cookie；为空时回退到基于 session 的校验
+    /// （兼容旧客户端）。
+    #[serde(default)]
+    pub captcha_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

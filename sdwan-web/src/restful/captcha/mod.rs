@@ -119,9 +119,11 @@
 pub(crate) mod base;
 pub mod builder;
 pub mod extension;
+pub mod store;
 mod utils;
 
 pub use base::captcha::*;
+pub use store::CaptchaStore;
 
 // #[cfg(test)]
 // mod tests {

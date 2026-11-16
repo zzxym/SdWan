@@ -49,6 +49,8 @@ pub struct RestfulServer {
     db: Db,
     oidc_config: oidc::OidcConfig,
     web_router: Option<Router>,
+    /// 验证码存储，用于不依赖 session cookie 的验证码校验
+    captcha_store: Arc<captcha::CaptchaStore>,
 }
 
 type AppStateInner = Arc<ClientManager>;
@@ -124,6 +126,7 @@ impl RestfulServer {
             db,
             oidc_config,
             web_router,
+            captcha_store: Arc::new(captcha::CaptchaStore::default()),
         })
     }
 
@@ -219,8 +222,11 @@ impl RestfulServer {
                 .continuously_delete_expired(tokio::time::Duration::from_secs(60)),
         ));
 
-        // Generate a cryptographic key to sign the session cookie.
-        let key = Key::generate();
+        // 使用持久化的签名密钥：服务重启后旧的 session cookie 依然有效，
+        // 避免用户被强制重新登录、验证码随 session 一起丢失。
+        let key_bytes = self.db.get_or_create_session_signing_key().await?;
+        let key = Key::try_from(key_bytes.as_slice())
+            .map_err(|e| anyhow::anyhow!("invalid session signing key: {e}"))?;
 
         let session_layer = SessionManagerLayer::new(session_store)
             .with_secure(false)
@@ -271,7 +277,7 @@ impl RestfulServer {
             .merge(NetworkApi::build_route())
             .merge(rpc::router())
             .route_layer(login_required!(Backend))
-            .merge(auth::router().layer(Extension(self.feature_flags.clone())))
+            .merge(auth::router(self.captcha_store.clone()).layer(Extension(self.feature_flags.clone())))
             .merge(oidc::router())
             .with_state(self.client_mgr.clone())
             .route(

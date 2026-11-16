@@ -23,7 +23,19 @@ pub struct LoginResult {
     messages: Vec<Message>,
 }
 
-pub fn router() -> Router<AppStateInner> {
+/// 验证码信息（JSON 形式），前端可直接用 `image` 作为 `<img>` 的 src，
+/// 并在注册时把 `captcha_id` 一起提交。
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CaptchaInfo {
+    /// 验证码标识，注册时需随请求提交
+    pub captcha_id: String,
+    /// Base64 编码的图片（`data:image/png;base64,...`）
+    pub image: String,
+    /// 有效期（秒）
+    pub expires_in: u64,
+}
+
+pub fn router(captcha_store: Arc<super::captcha::CaptchaStore>) -> Router<AppStateInner> {
     let r = Router::new()
         .route("/api/v1/auth/password", put(self::put::change_password))
         .route(
@@ -36,7 +48,9 @@ pub fn router() -> Router<AppStateInner> {
         .route("/api/v1/auth/login", post(self::post::login))
         .route("/api/v1/auth/logout", get(self::get::logout))
         .route("/api/v1/auth/captcha", get(self::get::get_captcha))
+        .route("/api/v1/auth/captcha_info", get(self::get::get_captcha_info))
         .route("/api/v1/auth/register", post(self::post::register))
+        .layer(axum::Extension(captcha_store))
 }
 
 mod put {
@@ -76,7 +90,10 @@ mod post {
 
     use crate::restful::{
         HttpHandleError,
-        captcha::extension::{CaptchaUtil, axum_tower_sessions::CaptchaAxumTowerSessionStaticExt},
+        captcha::{
+            CaptchaStore,
+            extension::{CaptchaUtil, axum_tower_sessions::CaptchaAxumTowerSessionStaticExt},
+        },
         other_error,
         users::RegisterNewUser,
     };
@@ -115,6 +132,7 @@ mod post {
 
     pub async fn register(
         Extension(feature_flags): Extension<Arc<FeatureFlags>>,
+        Extension(captcha_store): Extension<Arc<CaptchaStore>>,
         auth_session: AuthSession,
         captcha_session: tower_sessions::Session,
         Json(req): Json<RegisterNewUser>,
@@ -128,8 +146,14 @@ mod post {
             ));
         }
 
-        // 调用CaptchaUtil的静态方法验证验证码是否正确
-        if !CaptchaUtil::ver(&req.captcha, &captcha_session).await {
+        // 校验验证码：
+        // 优先使用 captcha_id（与 session cookie 无关，跨站嵌入等场景同样可用）；
+        // 兼容旧客户端：未携带 captcha_id 时回退到 session 校验。
+        let captcha_ok = match req.captcha_id.as_deref().filter(|id| !id.is_empty()) {
+            Some(captcha_id) => captcha_store.verify(captcha_id, &req.captcha),
+            None => CaptchaUtil::ver(&req.captcha, &captcha_session).await,
+        };
+        if !captcha_ok {
             return Err((
                 StatusCode::BAD_REQUEST,
                 other_error(format!("captcha verify error, input: {}", req.captcha)).into(),
@@ -152,17 +176,21 @@ mod get {
     use crate::restful::{
         HttpHandleError,
         captcha::{
+            CaptchaStore,
             NewCaptcha as _,
             builder::spec::SpecCaptcha,
             extension::{CaptchaUtil, axum_tower_sessions::CaptchaAxumTowerSessionExt as _},
         },
         other_error,
     };
-    use axum::{Json, response::Response};
+    use axum::{Json, extract::Extension, response::Response};
     use sdwan::proto::common::Void;
     use tower_sessions::Session;
 
     use super::*;
+
+    /// 验证码有效期（秒）
+    const CAPTCHA_EXPIRES_IN: u64 = 300;
 
     pub async fn logout(mut auth_session: AuthSession) -> Result<Json<Void>, HttpHandleError> {
         match auth_session.logout().await {
@@ -177,15 +205,56 @@ mod get {
         }
     }
 
-    pub async fn get_captcha(session: Session) -> Result<Response, HttpHandleError> {
+    /// 返回 PNG 图片形式的验证码（兼容旧客户端）。
+    ///
+    /// 同时会登记一个 `captcha_id`，可通过响应头 `X-Captcha-Id` 获取。
+    pub async fn get_captcha(
+        Extension(captcha_store): Extension<Arc<CaptchaStore>>,
+        session: Session,
+    ) -> Result<Response, HttpHandleError> {
         let mut captcha: CaptchaUtil<SpecCaptcha> = CaptchaUtil::with_size_and_len(127, 48, 4);
-        match captcha.out(&session).await {
-            Ok(response) => Ok(response),
-            Err(e) => Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json::from(other_error(format!("{:?}", e))),
-            )),
+        let mut response = match captcha.out(&session).await {
+            Ok(response) => response,
+            Err(e) => {
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json::from(other_error(format!("{:?}", e))),
+                ));
+            }
+        };
+
+        let answer = captcha.answer();
+        let captcha_id = captcha_store.issue(&answer);
+        if let Ok(value) = axum::http::HeaderValue::from_str(&captcha_id) {
+            response.headers_mut().insert("x-captcha-id", value);
         }
+
+        Ok(response)
+    }
+
+    /// 返回 JSON 形式的验证码信息，携带 `captcha_id`，校验时不再依赖 session cookie。
+    pub async fn get_captcha_info(
+        Extension(captcha_store): Extension<Arc<CaptchaStore>>,
+    ) -> Result<Json<CaptchaInfo>, HttpHandleError> {
+        let mut captcha: CaptchaUtil<SpecCaptcha> = CaptchaUtil::with_size_and_len(127, 48, 4);
+        let image = match captcha.base64() {
+            Ok(image) => image,
+            Err(e) => {
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json::from(other_error(format!("{:?}", e))),
+                ));
+            }
+        };
+
+        let answer = captcha.answer();
+        let captcha_id = captcha_store.issue(&answer);
+
+        Ok(Json(CaptchaInfo {
+            captcha_id,
+            image,
+            expires_in: CAPTCHA_EXPIRES_IN,
+        }))
     }
 
     pub async fn check_login_status(

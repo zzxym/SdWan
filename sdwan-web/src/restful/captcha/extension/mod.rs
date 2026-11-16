@@ -39,3 +39,18 @@ impl<T: AbstractCaptcha> NewCaptcha for CaptchaUtil<T> {
         }
     }
 }
+
+impl<T: AbstractCaptcha> CaptchaUtil<T> {
+    /// 获取当前验证码的答案文本。
+    ///
+    /// 若尚未生成验证码，会先生成一份，因此调用顺序应为：先渲染图片（`out`/`base64`），
+    /// 再取答案，两者指向同一份验证码。
+    pub fn answer(&mut self) -> String {
+        self.captcha_instance.get_chars().iter().collect()
+    }
+
+    /// 输出 Base64 编码的验证码图片（带 `data:image/png;base64,` 前缀）
+    pub fn base64(&mut self) -> Result<String, T::Error> {
+        self.captcha_instance.base64()
+    }
+}

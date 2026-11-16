@@ -30,6 +30,14 @@ export interface Credential {
 export interface RegisterData {
     credentials: Credential;
     captcha: string;
+    captcha_id?: string;
+}
+
+// 验证码信息，captcha_id 需在注册时一并提交
+export interface CaptchaInfo {
+    captcha_id: string;
+    image: string;
+    expires_in: number;
 }
 
 export interface Summary {
@@ -176,6 +184,12 @@ export class ApiClient {
 
     public captcha_url() {
         return this.client.defaults.baseURL + '/auth/captcha';
+    }
+
+    // 获取验证码（含 captcha_id），注册时一并提交，校验不依赖 session cookie
+    public async get_captcha(): Promise<CaptchaInfo> {
+        const response = await this.client.get<any, CaptchaInfo>('/auth/captcha_info');
+        return response;
     }
 
     public async getOidcConfig(): Promise<OidcConfigResponse> {

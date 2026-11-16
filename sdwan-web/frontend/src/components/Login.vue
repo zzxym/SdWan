@@ -10,7 +10,7 @@ import ApiClient, { Credential, RegisterData } from '../modules/api';
 
 const { t } = useI18n()
 
-defineProps<{
+const props = defineProps<{
     isRegistering: boolean;
 }>();
 
@@ -23,7 +23,21 @@ const password = ref('');
 const registerUsername = ref('');
 const registerPassword = ref('');
 const captcha = ref('');
-const captchaSrc = computed(() => api.value.captcha_url());
+const captchaId = ref('');
+const captchaImage = ref('');
+
+// 加载验证码：验证码是一次性的，校验失败后需要重新获取
+const loadCaptcha = async () => {
+    try {
+        const info = await api.value.get_captcha();
+        captchaId.value = info.captcha_id;
+        captchaImage.value = info.image;
+    } catch (error) {
+        console.error('Failed to load captcha:', error);
+        captchaId.value = '';
+        captchaImage.value = '';
+    }
+};
 
 
 const onSubmit = async () => {
@@ -45,13 +59,16 @@ const onSubmit = async () => {
 const onRegister = async () => {
     saveApiHost(apiHost.value);
     const credential: Credential = { username: registerUsername.value, password: registerPassword.value };
-    const registerReq: RegisterData = { credentials: credential, captcha: captcha.value };
+    const registerReq: RegisterData = { credentials: credential, captcha: captcha.value, captcha_id: captchaId.value };
     let ret = await api.value?.register(registerReq);
     if (ret.success) {
         toast.add({ severity: 'success', summary: 'Register Success', detail: ret.message, life: 2000 });
         router.push({ name: 'login' });
     } else {
         toast.add({ severity: 'error', summary: 'Register Failed', detail: ret.message, life: 2000 });
+        // 验证码为一次性使用，失败后刷新验证码
+        captcha.value = '';
+        await loadCaptcha();
     }
 };
 
@@ -90,6 +107,12 @@ watch(apiHost, () => {
     checkOidcConfig();
 });
 
+watch(() => props.isRegistering, (val) => {
+    if (val) {
+        loadCaptcha();
+    }
+});
+
 const onSsoLogin = () => {
     saveApiHost(apiHost.value);
     localStorage.setItem('apiHost', btoa(apiHost.value));
@@ -98,6 +121,9 @@ const onSsoLogin = () => {
 
 onMounted(() => {
     checkOidcConfig();
+    if (props.isRegistering) {
+        loadCaptcha();
+    }
 });
 
 onBeforeUnmount(() => {
@@ -160,7 +186,8 @@ onBeforeUnmount(() => {
                     <div class="p-field">
                         <label for="captcha" class="block text-sm font-medium">{{ t('web.login.captcha') }}</label>
                         <InputText id="captcha" v-model="captcha" required class="w-full" />
-                        <img :src="captchaSrc" alt="Captcha" class="mt-2 mb-2" />
+                        <img :src="captchaImage" alt="Captcha" class="mt-2 mb-2 cursor-pointer"
+                            :title="t('web.login.captcha_refresh')" @click="loadCaptcha" />
                     </div>
                     <div class="flex items-center justify-between">
                         <Button :label="t('web.login.register')" type="submit" class="w-full" />

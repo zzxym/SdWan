@@ -69,6 +69,64 @@ impl Db {
         &self.orm_db
     }
 
+    /// 读取一项应用级配置（`app_config` 表）
+    pub async fn get_app_config(&self, key: &str) -> Result<Option<String>, DbErr> {
+        use sqlx::Row;
+
+        let row = sqlx::query("SELECT value FROM app_config WHERE key = ?")
+            .bind(key)
+            .fetch_optional(&self.db)
+            .await
+            .map_err(|e| DbErr::Custom(format!("Failed to read app config: {e}")))?;
+
+        Ok(row.map(|r| r.get::<String, _>("value")))
+    }
+
+    /// 写入一项应用级配置（`app_config` 表）
+    pub async fn set_app_config(&self, key: &str, value: &str) -> Result<(), DbErr> {
+        sqlx::query(
+            "INSERT INTO app_config (key, value) VALUES (?, ?) \
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        )
+        .bind(key)
+        .bind(value)
+        .execute(&self.db)
+        .await
+        .map_err(|e| DbErr::Custom(format!("Failed to write app config: {e}")))?;
+
+        Ok(())
+    }
+
+    /// 获取（必要时生成并持久化）session cookie 的签名密钥。
+    ///
+    /// 密钥持久化的目的是：服务重启后旧的 session cookie 依然有效，
+    /// 避免用户被强制重新登录、验证码随 session 一起丢失。
+    pub async fn get_or_create_session_signing_key(&self) -> anyhow::Result<Vec<u8>> {
+        const KEY_NAME: &str = "session_signing_key";
+        /// cookie crate 要求 HMAC-SHA256 密钥至少 64 字节
+        const KEY_LEN: usize = 64;
+
+        if let Some(stored) = self.get_app_config(KEY_NAME).await? {
+            if let Some(bytes) = hex_decode(&stored) {
+                if bytes.len() >= KEY_LEN {
+                    return Ok(bytes);
+                }
+                tracing::warn!(
+                    "Stored session signing key is invalid ({} bytes), regenerating",
+                    bytes.len()
+                );
+            }
+        }
+
+        use rand::RngCore;
+        let mut bytes = vec![0u8; KEY_LEN];
+        rand::thread_rng().fill_bytes(&mut bytes);
+
+        self.set_app_config(KEY_NAME, &hex_encode(&bytes)).await?;
+
+        Ok(bytes)
+    }
+
     pub async fn get_user_id<T: ToString>(
         &self,
         user_name: T,
@@ -468,4 +526,25 @@ mod tests {
         assert_eq!(device1_configs.len(), 1);
         assert_eq!(device2_configs.len(), 1);
     }
+}
+
+/// 将字节编码为十六进制字符串
+fn hex_encode(bytes: &[u8]) -> String {
+    let mut out = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        out.push_str(&format!("{b:02x}"));
+    }
+    out
+}
+
+/// 解析十六进制字符串，格式非法时返回 `None`
+fn hex_decode(s: &str) -> Option<Vec<u8>> {
+    if s.len() % 2 != 0 {
+        return None;
+    }
+
+    (0..s.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(s.get(i..i + 2)?, 16).ok())
+        .collect()
 }

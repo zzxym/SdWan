@@ -275,6 +275,7 @@ web:
     remember_me: Remember Me
     api_host: API Host
     captcha: Captcha
+    captcha_refresh: Click the image to refresh the captcha
     back_to_login: Back to Login
     login: Login
     sso_login: "SSO Login"
