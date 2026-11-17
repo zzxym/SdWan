@@ -31,6 +31,7 @@ const captchaId = ref('')
 const captchaImage = ref('')
 const loading = ref(false)
 const error = ref('')
+const showPassword = ref(false)
 
 const MOCK_CAPTCHA = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iNDAiPjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iNDAiIGZpbGw9IiNlZGYzZjgiLz48dGV4dCB4PSI2MCIgeT0iMjgiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMzNzQ1NWEiPjEyMzQ8L3RleHQ+PC9zdmc+'
 
@@ -70,6 +71,7 @@ async function loadCaptcha() {
 function switchTab(next: Tab) {
   tab.value = next
   error.value = ''
+  showPassword.value = false
 }
 
 watch(tab, (next) => {
@@ -150,14 +152,25 @@ async function submit() {
 
           <div class="flex flex-col gap-2">
             <label class="auth-label" for="auth-password">{{ t('auth.password') }}</label>
-            <input
-              id="auth-password"
-              v-model="passwordModel"
-              type="password"
-              class="auth-input"
-              :autocomplete="tab === 'login' ? 'current-password' : 'new-password'"
-              :placeholder="t('auth.password_placeholder')"
-            >
+            <div class="auth-password-wrap">
+              <input
+                id="auth-password"
+                v-model="passwordModel"
+                :type="showPassword ? 'text' : 'password'"
+                class="auth-input auth-password-input"
+                :autocomplete="tab === 'login' ? 'current-password' : 'new-password'"
+                :placeholder="t('auth.password_placeholder')"
+              >
+              <button
+                type="button"
+                class="auth-password-toggle"
+                :aria-label="showPassword ? t('auth.hide_password') : t('auth.show_password')"
+                :title="showPassword ? t('auth.hide_password') : t('auth.show_password')"
+                @click="showPassword = !showPassword"
+              >
+                <i class="pi" :class="showPassword ? 'pi-eye-slash' : 'pi-eye'" />
+              </button>
+            </div>
           </div>
 
           <div v-if="tab === 'register'" class="flex flex-col gap-2">
@@ -260,6 +273,42 @@ async function submit() {
 .auth-input:focus {
   border-color: var(--p-primary-color);
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
+}
+
+.auth-password-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.auth-password-input {
+  padding-right: 3.25rem;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--p-surface-500);
+  background: transparent;
+  border: none;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.auth-password-toggle:hover {
+  color: var(--p-primary-color);
+  background: var(--p-surface-100);
+}
+
+.auth-password-toggle .pi {
+  font-size: 1.1rem;
 }
 
 .auth-captcha-img {

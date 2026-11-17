@@ -450,6 +450,8 @@ auth:
   username_placeholder: 请输入用户名
   password: 密码
   password_placeholder: 请输入密码
+  show_password: 显示密码
+  hide_password: 隐藏密码
   captcha: 验证码
   captcha_placeholder: 请输入验证码
   captcha_refresh: 点击刷新验证码

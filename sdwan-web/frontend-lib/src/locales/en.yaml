@@ -450,6 +450,8 @@ auth:
   username_placeholder: Enter your username
   password: Password
   password_placeholder: Enter your password
+  show_password: Show password
+  hide_password: Hide password
   captcha: Captcha
   captcha_placeholder: Enter the captcha
   captcha_refresh: Click to refresh captcha
