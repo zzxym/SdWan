@@ -46,7 +46,7 @@ parse_network_config: 解析网络配置
 retain_network_instance: 保留网络实例
 collect_network_infos: 收集网络信息
 settings: 设置
-exchange_language: Switch to English
+exchange_language: English
 logging: 日志
 logging_level_info: 信息
 logging_level_debug: 调试
@@ -438,14 +438,14 @@ client:
   status_client: 客户端
   status_running: 运行中
   status_stopped: 未运行
-  status_web_console: Web 控制台
+  status_web_console: 服务器
   status_web_connected: 已连接
   status_web_disconnected: 未连接
   status_version: 客户端版本
   status_instance_count: 运行实例
   status_select_instance: 网络实例
   status_instance_title: 网络实例
-  status_no_instance: 当前没有运行中的网络实例，请在 Web 控制台中配置并启动。
+  status_no_instance: 当前没有运行中的网络实例，请在服务器中配置并启动。
 
 auth:
   subtitle: 登录后连接您的 SDWAN 网络

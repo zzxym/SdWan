@@ -46,7 +46,7 @@ parse_network_config: Parse Network Config
 retain_network_instance: Retain Network Instance
 collect_network_infos: Collect Network Infos
 settings: Settings
-exchange_language: 切换中文
+exchange_language: 中文
 logging: Logging
 logging_level_info: Info
 logging_level_debug: Debug
@@ -438,14 +438,14 @@ client:
   status_client: Client
   status_running: Running
   status_stopped: Not Running
-  status_web_console: Web Console
+  status_web_console: Server
   status_web_connected: Connected
   status_web_disconnected: Disconnected
   status_version: Client Version
   status_instance_count: Running Instances
   status_select_instance: Network Instance
   status_instance_title: Network Instance
-  status_no_instance: No running network instance. Please configure and start it from the web console.
+  status_no_instance: No running network instance. Please configure and start it from the server.
 
 auth:
   subtitle: Sign in to connect to your SDWAN network
