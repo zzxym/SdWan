@@ -48,7 +48,7 @@ android {
     compileSdk = 34
     namespace = "com.zzxym.sdwan"
     defaultConfig {
-        manifestPlaceholders["usesCleartextTraffic"] = "true"
+        manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "com.zzxym.sdwan"
         minSdk = 24
         targetSdk = 34

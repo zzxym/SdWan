@@ -6,7 +6,7 @@ import { getCaptcha, login, register } from '~/composables/auth'
 /**
  * SDWAN 客户端登录 / 注册面板
  *
- * 账号体系直接复用 web 控制台（http://oa.xiaolin.cc:11211）。
+ * 账号体系直接复用 web 控制台（https://sdwanlogin.xiaolin.cc:81）。
  * 登录成功后由父组件用该用户名连接配置服务器并创建专属网络。
  */
 const props = defineProps<{
