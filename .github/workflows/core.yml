@@ -243,7 +243,17 @@ jobs:
                 $UPX_BIN --lzma --best "$BIN" || true
               fi
 
-              mv "$BIN" ./artifacts/objects/
+              case "$(basename "$BIN")" in
+                sdwan-web"$SUFFIX"|sdwan-web-embed"$SUFFIX")
+                  if [[ "${{ matrix.ARTIFACT_NAME }}" == "linux-x86_64" ]]; then
+                    mkdir -p ./web_artifacts
+                    mv "$BIN" ./web_artifacts/
+                  fi
+                  ;;
+                *)
+                  mv "$BIN" ./artifacts/objects/
+                  ;;
+              esac
             fi
           done
 
@@ -256,6 +266,15 @@ jobs:
           name: sdwan-${{ matrix.ARTIFACT_NAME }}
           path: |
             ./artifacts/*
+
+      - name: Archive web binaries
+        if: ${{ matrix.ARTIFACT_NAME == 'linux-x86_64' }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: sdwan-web-binaries
+          path: |
+            ./web_artifacts/*
+          if-no-files-found: error
 
   build_magisk:
     runs-on: ubuntu-latest
@@ -278,7 +297,6 @@ jobs:
           mkdir -p ./sdwan-contrib/sdwan-magisk/
           cp ./downloaded-binaries/sdwan-core ./sdwan-contrib/sdwan-magisk/
           cp ./downloaded-binaries/sdwan-cli ./sdwan-contrib/sdwan-magisk/
-          cp ./downloaded-binaries/sdwan-web ./sdwan-contrib/sdwan-magisk/
 
       # 上传生成的模块
       - name: Upload Magisk Module
