@@ -95,10 +95,7 @@ async fn local_ipv4() -> Result<String, String> {
 
 /// 退出登录时停止并删除当前客户端的全部网络实例及其配置。
 #[tauri::command]
-async fn remove_network_instances(
-    app: AppHandle,
-    instance_ids: Vec<String>,
-) -> Result<(), String> {
+async fn remove_network_instances(app: AppHandle, instance_ids: Vec<String>) -> Result<(), String> {
     let instance_ids: Vec<uuid::Uuid> = instance_ids
         .into_iter()
         .map(|id| id.parse().map_err(|e: uuid::Error| e.to_string()))
