@@ -17,17 +17,17 @@ use axum::{
     routing::{delete, get, post},
 };
 use axum_login::AuthUser;
+use sdwan::launcher::NetworkConfig;
+use sdwan::proto::common::Void;
+use sdwan::rpc_service::remote_client::RemoteClientManager;
 use sea_orm::{
     ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter, QueryOrder, QuerySelect as _,
     RelationTrait, Set,
 };
-use sdwan::launcher::NetworkConfig;
-use sdwan::proto::common::Void;
-use sdwan::rpc_service::remote_client::RemoteClientManager;
 
 use crate::db::UserIdInDb;
 
-use super::network::{convert_error, RunNetworkJsonReq, UpdateNetworkStateJsonReq};
+use super::network::{RunNetworkJsonReq, UpdateNetworkStateJsonReq, convert_error};
 use super::users::{AuthSession, Backend, UserUsable};
 use super::{AppState, AppStateInner, HttpHandleError, convert_db_error, other_error};
 
@@ -112,7 +112,10 @@ impl AdminApi {
     }
 
     /// 按用户名查找用户 id。
-    async fn find_user_id(backend: &Backend, username: &str) -> Result<UserIdInDb, HttpHandleError> {
+    async fn find_user_id(
+        backend: &Backend,
+        username: &str,
+    ) -> Result<UserIdInDb, HttpHandleError> {
         backend
             .db()
             .get_user_id(username)
@@ -314,9 +317,12 @@ impl AdminApi {
         let target_id = Self::find_user_id(&backend, &username).await?;
 
         backend
-            .change_password(target_id, &ChangePassword {
-                new_password: payload.new_password,
-            })
+            .change_password(
+                target_id,
+                &ChangePassword {
+                    new_password: payload.new_password,
+                },
+            )
             .await
             .map_err(|e| {
                 (
@@ -359,8 +365,10 @@ impl AdminApi {
         auth_session: AuthSession,
         State(client_mgr): AppState,
         Path((username, machine_id)): Path<(String, uuid::Uuid)>,
-    ) -> Result<Json<sdwan::rpc_service::remote_client::ListNetworkInstanceIdsJsonResp>, HttpHandleError>
-    {
+    ) -> Result<
+        Json<sdwan::rpc_service::remote_client::ListNetworkInstanceIdsJsonResp>,
+        HttpHandleError,
+    > {
         Self::require_admin(&auth_session).await?;
 
         let backend = auth_session.backend.clone();

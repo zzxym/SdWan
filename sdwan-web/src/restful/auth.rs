@@ -138,10 +138,7 @@ mod post {
     }
 
     /// 查询账号状态，仅在口令正确但账号不可用时返回原因描述。
-    async fn account_state_reason(
-        auth_session: &AuthSession,
-        username: &str,
-    ) -> Option<String> {
+    async fn account_state_reason(auth_session: &AuthSession, username: &str) -> Option<String> {
         use crate::db::entity::users;
         use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 

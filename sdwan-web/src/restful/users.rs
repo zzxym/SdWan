@@ -389,10 +389,7 @@ mod tests {
         assert!(backend.is_admin(admin_id).await.unwrap());
 
         // 普通用户的权限集合不应包含 admins 组带来的全部权限。
-        let normal_perms = backend
-            .get_group_permissions(&normal_user)
-            .await
-            .unwrap();
+        let normal_perms = backend.get_group_permissions(&normal_user).await.unwrap();
         assert!(
             !normal_perms.contains(&Permission {
                 name: "sessions".to_string()
