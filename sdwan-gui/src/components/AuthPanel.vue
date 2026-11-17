@@ -33,6 +33,16 @@ const loading = ref(false)
 const error = ref('')
 const showPassword = ref(false)
 
+/**
+ * Chromium(Chrome 121+/WebView2) 会给 `type="password"` 内置一个原生的密码显示按钮，
+ * 它渲染在 UA shadow DOM 里，无法用 CSS 隐藏，于是 Windows 上会出现两个眼睛。
+ * 这里改用 `type="text"` + `-webkit-text-security` 做掩码，原生按钮就不会出现，
+ * 密码可见性完全由自绘的眼睛按钮控制，Windows 与 Android 表现一致。
+ * 若浏览器不支持 text-security，则回退到原生 password 类型。
+ */
+const supportsTextSecurity = typeof CSS !== 'undefined'
+  && (CSS.supports('-webkit-text-security', 'disc') || CSS.supports('text-security', 'disc'))
+
 const MOCK_CAPTCHA = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iNDAiPjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iNDAiIGZpbGw9IiNlZGYzZjgiLz48dGV4dCB4PSI2MCIgeT0iMjgiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMzNzQ1NWEiPjEyMzQ8L3RleHQ+PC9zdmc+'
 
 const usernameModel = computed({
@@ -156,8 +166,9 @@ async function submit() {
               <input
                 id="auth-password"
                 v-model="passwordModel"
-                :type="showPassword ? 'text' : 'password'"
+                :type="supportsTextSecurity ? 'text' : (showPassword ? 'text' : 'password')"
                 class="auth-input auth-password-input"
+                :class="{ 'auth-password-masked': supportsTextSecurity && !showPassword }"
                 :autocomplete="tab === 'login' ? 'current-password' : 'new-password'"
                 :placeholder="t('auth.password_placeholder')"
               >
@@ -282,6 +293,11 @@ async function submit() {
 
 .auth-password-input {
   padding-right: 3.25rem;
+}
+
+.auth-password-masked {
+  -webkit-text-security: disc;
+  text-security: disc;
 }
 
 .auth-password-toggle {
