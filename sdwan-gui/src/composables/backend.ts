@@ -138,6 +138,10 @@ export async function isClientRunning() {
   return await invoke<boolean>('is_client_running')
 }
 
+export async function setAllowedNetworkName(username: string) {
+  return await invoke<void>('set_allowed_network_name', { username })
+}
+
 export async function initWebClient(url?: string) {
   return await invoke('init_web_client', { url })
 }

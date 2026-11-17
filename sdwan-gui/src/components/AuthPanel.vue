@@ -211,10 +211,6 @@ async function submit() {
               :label="tab === 'login' ? t('auth.login_button') : t('auth.register_button')"
               :loading="loading"
             />
-
-            <div class="auth-hint md:col-span-2">
-              {{ tab === 'login' ? t('auth.login_hint') : t('auth.register_hint') }}
-            </div>
           </form>
         </div>
       </template>
@@ -326,12 +322,6 @@ async function submit() {
 .auth-submit {
   min-height: 4rem;
   font-size: 1.25rem;
-}
-
-.auth-hint {
-  font-size: 0.9rem;
-  color: var(--p-surface-500);
-  text-align: center;
 }
 
 @media (max-width: 640px) {

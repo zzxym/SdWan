@@ -441,11 +441,6 @@ client:
   status_web_console: Server
   status_web_connected: Connected
   status_web_disconnected: Disconnected
-  status_version: Client Version
-  status_instance_count: Running Instances
-  status_select_instance: Network Instance
-  status_instance_title: Network Instance
-  status_no_instance: No running network instance. Please configure and start it from the server.
 
 auth:
   subtitle: Sign in to connect to your SDWAN network
@@ -463,8 +458,6 @@ auth:
   register_button: Create Account
   login_failed: Login failed
   register_failed: Registration failed
-  login_hint: Use the account registered on the web console
-  register_hint: Registration uses the web console account system
   logout: Sign Out
   logout_failed: "Failed to remove the running network on logout: {error}"
 

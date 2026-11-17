@@ -23,6 +23,7 @@ import {
   isClientRunning,
   removeNetworkInstances,
   sendConfigs,
+  setAllowedNetworkName,
 } from '~/composables/backend'
 import { createDefaultSdwanNetworkConfig, resolveConfigServerUrl } from '~/composables/sdwan'
 import { isPreviewMode, safeOsType } from '~/composables/preview'
@@ -48,9 +49,44 @@ const previewMode = isPreviewMode();
 const LOGIN_USER_KEY = 'sdwan_login_user'
 const loggedInUser = ref<string>(localStorage.getItem(LOGIN_USER_KEY) || '')
 const isLoggingOut = ref(false)
+const clientVersion = ref('')
+
+interface StoredUserConfig {
+  config: { instance_id?: string, network_name?: string }
+  source?: string
+}
+
+function readStoredConfigs(): StoredUserConfig[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('networkList') || '[]')
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * 该定制客户端只运行当前登录用户对应的一个网络：
+ * 清理本地历史配置，只保留 <username> 的一条，并返回其实例 ID。
+ */
+function normalizeStoredConfigs(username: string): string[] {
+  const kept = readStoredConfigs().filter(entry => entry?.config?.network_name === username).slice(0, 1)
+  localStorage.setItem('networkList', JSON.stringify(kept))
+  return kept.map(entry => entry.config.instance_id).filter((id): id is string => !!id)
+}
+
+async function removeAllNetworkInstances() {
+  const idsResp = await remoteClient.value.list_network_instance_ids().catch(() => undefined)
+  const instanceIds = [
+    ...(idsResp?.running_inst_ids ?? []),
+    ...(idsResp?.disabled_inst_ids ?? []),
+  ].map(Utils.UuidToStr)
+  if (instanceIds.length > 0) {
+    await removeNetworkInstances(instanceIds)
+  }
+}
 
 async function initWithMode(mode: Mode) {
-  const running_inst_ids = (await remoteClient.value.list_network_instance_ids().catch(() => undefined))?.running_inst_ids ?? []
 
   if (currentMode.value.mode === 'service' && mode.mode !== 'service') {
     let serviceStatus = await getServiceStatus()
@@ -130,12 +166,23 @@ async function initWithMode(mode: Mode) {
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
   }
-  await sendConfigs(running_inst_ids.map(Utils.UuidToStr))
-  // 未登录时不连接配置服务器：登录成功后会以用户名作为 token 重新连接
-  if (mode.mode === 'normal' && loggedInUser.value) {
-    mode.config_server_url = resolveConfigServerUrl(loggedInUser.value)
-    initWebClient(mode.config_server_url)
+  if (loggedInUser.value) {
+    // 定制客户端只允许运行当前登录用户对应的单个网络：
+    // 先设定允许的网络名，清理历史实例，再仅下发该用户专属网络配置。
+    await setAllowedNetworkName(loggedInUser.value)
+    const enabledIds = normalizeStoredConfigs(loggedInUser.value)
+    await removeAllNetworkInstances()
+    await sendConfigs(enabledIds)
+    if (mode.mode === 'normal') {
+      // 登录成功后以用户名作为 token 连接配置服务器
+      mode.config_server_url = resolveConfigServerUrl(loggedInUser.value)
+      initWebClient(mode.config_server_url)
+    }
+  } else {
+    // 未登录时不连接配置服务器，也不运行任何网络
+    await sendConfigs([])
   }
+  clientVersion.value = await getSdwanVersion().catch(() => '')
   currentMode.value = mode
   saveMode(mode)
   clientRunning.value = await isClientRunning()
@@ -250,6 +297,8 @@ async function onAuthenticated(credential: { username: string, password: string 
   }
 
   try {
+    await setAllowedNetworkName(username)
+    await removeAllNetworkInstances()
     await initWebClient(url)
   } catch (e: any) {
     console.error('Failed to connect config server after login', e)
@@ -282,14 +331,7 @@ async function logout() {
   try {
     if (!previewMode) {
       try {
-        const idsResp = await remoteClient.value.list_network_instance_ids().catch(() => undefined)
-        const instanceIds = [
-          ...(idsResp?.running_inst_ids ?? []),
-          ...(idsResp?.disabled_inst_ids ?? []),
-        ].map(Utils.UuidToStr)
-        if (instanceIds.length > 0) {
-          await removeNetworkInstances(instanceIds)
-        }
+        await removeAllNetworkInstances()
       } catch (e) {
         console.error('Failed to remove network instances on logout', e)
         toast.add({
@@ -434,6 +476,9 @@ async function connectRpcClient(isNormalMode: boolean, url?: string) {
           <span class="p-menubar-item-label">{{ getLabel(item) }}</span>
         </a>
       </template>
+      <template #end>
+        <span v-if="clientVersion" class="client-version">{{ clientVersion }}</span>
+      </template>
     </Menubar>
   </div>
 </template>
@@ -446,6 +491,14 @@ async function connectRpcClient(isNormalMode: boolean, url?: string) {
 
 .p-dropdown :deep(.p-dropdown-panel .p-dropdown-items .p-dropdown-item) {
   padding: 0 0.5rem;
+}
+
+.client-version {
+  margin-left: auto;
+  padding: 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--p-text-muted-color, var(--p-surface-500));
+  white-space: nowrap;
 }
 </style>
 

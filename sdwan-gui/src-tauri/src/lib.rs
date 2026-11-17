@@ -65,6 +65,10 @@ static RPC_SERVER: once_cell::sync::Lazy<Mutex<Option<RpcServer>>> =
 static WEB_CLIENT: once_cell::sync::Lazy<RwLock<Option<WebClient>>> =
     once_cell::sync::Lazy::new(|| RwLock::new(None));
 
+/// 当前登录用户对应的网络名；该精简客户端只允许运行这个名字的单个网络。
+static ALLOWED_NETWORK_NAME: once_cell::sync::Lazy<RwLock<Option<String>>> =
+    once_cell::sync::Lazy::new(|| RwLock::new(None));
+
 macro_rules! get_client_manager {
     () => {{
         let guard = CLIENT_MANAGER
@@ -390,13 +394,33 @@ async fn is_client_running() -> Result<bool, String> {
     Ok(get_client_manager!()?.rpc_manager.is_running())
 }
 
+/// 启动时在连接配置服务器之前设置允许的网络名。
+#[tauri::command]
+async fn set_allowed_network_name(username: String) -> Result<(), String> {
+    *ALLOWED_NETWORK_NAME.write().await = Some(username);
+    Ok(())
+}
+
 #[tauri::command]
 async fn init_web_client(app: AppHandle, url: Option<String>) -> Result<(), String> {
     let mut web_client_guard = WEB_CLIENT.write().await;
     let Some(url) = url else {
         *web_client_guard = None;
+        *ALLOWED_NETWORK_NAME.write().await = None;
         return Ok(());
     };
+
+    // udp://oa.xiaolin.cc:22020/<username> -> <username>
+    let username = url::Url::parse(&url)
+        .ok()
+        .and_then(|parsed| {
+            parsed
+                .path_segments()
+                .and_then(|segments| segments.filter(|segment| !segment.is_empty()).last())
+                .map(str::to_string)
+        })
+        .ok_or_else(|| "Failed to extract username from config server URL".to_string())?;
+    *ALLOWED_NETWORK_NAME.write().await = Some(username);
     let instance_manager = INSTANCE_MANAGER
         .try_read()
         .map_err(|_| "Failed to acquire read lock for instance manager")?
@@ -880,6 +904,40 @@ mod manager {
             source: PersistedConfigSource,
         ) -> Result<(), String> {
             let instance_id = cfg.get_id();
+
+            // 定制客户端只允许运行当前登录用户对应的单个网络。
+            let allowed_name = ALLOWED_NETWORK_NAME.read().await.clone();
+            if let Some(allowed_name) = allowed_name {
+                let network_name = cfg.get_network_identity().network_name;
+                if network_name != allowed_name {
+                    return Err(format!(
+                        "Only network <{}> is allowed on this client, got <{}>",
+                        allowed_name, network_name
+                    ));
+                }
+
+                let running_ids = INSTANCE_MANAGER
+                    .read()
+                    .await
+                    .as_ref()
+                    .map(|manager| {
+                        manager
+                            .iter()
+                            .map(|entry| *entry.key())
+                            .collect::<Vec<uuid::Uuid>>()
+                    })
+                    .unwrap_or_default();
+                let other_ids = running_ids
+                    .into_iter()
+                    .filter(|id| *id != instance_id)
+                    .collect::<Vec<_>>();
+                if !other_ids.is_empty() {
+                    self.handle_remove_network_instances(app.clone(), other_ids)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                }
+            }
+
             app.emit("pre_run_network_instance", instance_id.to_string())
                 .map_err(|e| e.to_string())?;
 
@@ -1286,6 +1344,7 @@ pub fn run_gui() -> std::process::ExitCode {
             get_service_status,
             init_rpc_connection,
             is_client_running,
+            set_allowed_network_name,
             init_web_client,
             is_web_client_connected,
             get_log_dir_path,

@@ -105,6 +105,7 @@ declare global {
   const sdwanPresetAdvancedSettings: typeof import('./composables/sdwan')['sdwanPresetAdvancedSettings']
   const sendConfigs: typeof import('./composables/backend')['sendConfigs']
   const setActivePinia: typeof import('pinia')['setActivePinia']
+  const setAllowedNetworkName: typeof import('./composables/backend')['setAllowedNetworkName']
   const setLoggingLevel: typeof import('./composables/backend')['setLoggingLevel']
   const setMapStoreSuffix: typeof import('pinia')['setMapStoreSuffix']
   const setServiceStatus: typeof import('./composables/backend')['setServiceStatus']
@@ -253,6 +254,7 @@ declare module 'vue' {
     readonly sdwanPresetAdvancedSettings: UnwrapRef<typeof import('./composables/sdwan')['sdwanPresetAdvancedSettings']>
     readonly sendConfigs: UnwrapRef<typeof import('./composables/backend')['sendConfigs']>
     readonly setActivePinia: UnwrapRef<typeof import('pinia')['setActivePinia']>
+    readonly setAllowedNetworkName: UnwrapRef<typeof import('./composables/backend')['setAllowedNetworkName']>
     readonly setLoggingLevel: UnwrapRef<typeof import('./composables/backend')['setLoggingLevel']>
     readonly setMapStoreSuffix: UnwrapRef<typeof import('pinia')['setMapStoreSuffix']>
     readonly setServiceStatus: UnwrapRef<typeof import('./composables/backend')['setServiceStatus']>
