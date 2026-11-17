@@ -94,6 +94,7 @@ declare global {
   const readonly: typeof import('vue')['readonly']
   const ref: typeof import('vue')['ref']
   const register: typeof import('./composables/auth')['register']
+  const removeNetworkInstances: typeof import('./composables/backend')['removeNetworkInstances']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveConfigServerUrl: typeof import('./composables/sdwan')['resolveConfigServerUrl']
   const runNetworkInstance: typeof import('./composables/backend')['runNetworkInstance']
@@ -241,6 +242,7 @@ declare module 'vue' {
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
     readonly register: UnwrapRef<typeof import('./composables/auth')['register']>
+    readonly removeNetworkInstances: UnwrapRef<typeof import('./composables/backend')['removeNetworkInstances']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveConfigServerUrl: UnwrapRef<typeof import('./composables/sdwan')['resolveConfigServerUrl']>
     readonly runNetworkInstance: UnwrapRef<typeof import('./composables/backend')['runNetworkInstance']>
