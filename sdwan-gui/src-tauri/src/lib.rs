@@ -89,6 +89,28 @@ async fn local_ipv4() -> Result<String, String> {
         .map_err(|e| e.to_string())
 }
 
+/// 退出登录时停止并删除当前客户端的全部网络实例及其配置。
+#[tauri::command]
+async fn remove_network_instances(
+    app: AppHandle,
+    instance_ids: Vec<String>,
+) -> Result<(), String> {
+    let instance_ids: Vec<uuid::Uuid> = instance_ids
+        .into_iter()
+        .map(|id| id.parse().map_err(|e: uuid::Error| e.to_string()))
+        .collect::<Result<_, _>>()?;
+
+    let client_manager = get_client_manager!()?;
+    client_manager
+        .handle_remove_network_instances(app.clone(), instance_ids.clone())
+        .await
+        .map_err(|e| e.to_string())?;
+    client_manager
+        .post_remote_remove_network_instances_hook(&app, &instance_ids)
+        .await?;
+    Ok(())
+}
+
 #[tauri::command]
 fn set_dock_visibility(app: tauri::AppHandle, visible: bool) -> Result<(), String> {
     #[cfg(target_os = "macos")]
@@ -1253,6 +1275,7 @@ pub fn run_gui() -> std::process::ExitCode {
             set_tun_fd,
             sdwan_version,
             local_ipv4,
+            remove_network_instances,
             set_dock_visibility,
             list_network_instance_ids,
             get_config,

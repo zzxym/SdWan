@@ -446,7 +446,6 @@ client:
   status_select_instance: Network Instance
   status_instance_title: Network Instance
   status_no_instance: No running network instance. Please configure and start it from the web console.
-  read_only_notice: This client is managed by the web console and cannot be configured locally.
 
 auth:
   subtitle: Sign in to connect to your SDWAN network
@@ -467,6 +466,7 @@ auth:
   login_hint: Use the account registered on the web console
   register_hint: Registration uses the web console account system
   logout: Sign Out
+  logout_failed: "Failed to remove the running network on logout: {error}"
 
 acl:
   title: Access Control (ACL)

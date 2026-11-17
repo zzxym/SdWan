@@ -184,11 +184,6 @@ onUnmounted(() => {
       </template>
     </Card>
 
-    <div class="flex items-center gap-2 px-3 py-2 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-200 text-sm">
-      <i class="pi pi-info-circle" />
-      <span>{{ t('client.read_only_notice') }}</span>
-    </div>
-
     <Card v-if="instances.length > 0">
       <template #title>
         {{ t('client.status_select_instance') }}

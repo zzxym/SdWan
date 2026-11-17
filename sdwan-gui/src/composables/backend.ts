@@ -86,6 +86,11 @@ export async function getLocalIpv4() {
   return await invoke<string>('local_ipv4')
 }
 
+/** 退出登录时停止并删除客户端上的全部网络实例及其配置。 */
+export async function removeNetworkInstances(instanceIds: string[]) {
+  return await invoke<void>('remove_network_instances', { instanceIds })
+}
+
 export async function listNetworkInstanceIds() {
   return await invoke<ListNetworkInstanceIdResponse>('list_network_instance_ids')
 }

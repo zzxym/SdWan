@@ -21,6 +21,7 @@ import {
   initRpcConnection,
   initWebClient,
   isClientRunning,
+  removeNetworkInstances,
   sendConfigs,
 } from '~/composables/backend'
 import { createDefaultSdwanNetworkConfig, resolveConfigServerUrl } from '~/composables/sdwan'
@@ -46,6 +47,7 @@ const previewMode = isPreviewMode();
 
 const LOGIN_USER_KEY = 'sdwan_login_user'
 const loggedInUser = ref<string>(localStorage.getItem(LOGIN_USER_KEY) || '')
+const isLoggingOut = ref(false)
 
 async function initWithMode(mode: Mode) {
   const running_inst_ids = (await remoteClient.value.list_network_instance_ids().catch(() => undefined))?.running_inst_ids ?? []
@@ -273,15 +275,43 @@ async function provisionUserNetwork(username: string, password: string) {
 }
 
 async function logout() {
-  localStorage.removeItem(LOGIN_USER_KEY)
-  localStorage.removeItem('networkList')
-  loggedInUser.value = ''
-  if (!previewMode) {
-    try {
-      await initWebClient(undefined)
-    } catch (e: any) {
-      console.error('Failed to disconnect config server', e)
+  if (isLoggingOut.value) {
+    return
+  }
+  isLoggingOut.value = true
+  try {
+    if (!previewMode) {
+      try {
+        const idsResp = await remoteClient.value.list_network_instance_ids().catch(() => undefined)
+        const instanceIds = [
+          ...(idsResp?.running_inst_ids ?? []),
+          ...(idsResp?.disabled_inst_ids ?? []),
+        ].map(Utils.UuidToStr)
+        if (instanceIds.length > 0) {
+          await removeNetworkInstances(instanceIds)
+        }
+      } catch (e) {
+        console.error('Failed to remove network instances on logout', e)
+        toast.add({
+          severity: 'error',
+          summary: t('error'),
+          detail: t('auth.logout_failed', { error: e instanceof Error ? e.message : String(e) }),
+          life: 5000,
+        })
+      }
+
+      try {
+        await initWebClient(undefined)
+      } catch (e) {
+        console.error('Failed to disconnect config server', e)
+      }
     }
+
+    localStorage.removeItem(LOGIN_USER_KEY)
+    localStorage.removeItem('networkList')
+    loggedInUser.value = ''
+  } finally {
+    isLoggingOut.value = false
   }
 }
 

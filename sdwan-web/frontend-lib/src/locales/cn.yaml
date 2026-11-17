@@ -446,7 +446,6 @@ client:
   status_select_instance: 网络实例
   status_instance_title: 网络实例
   status_no_instance: 当前没有运行中的网络实例，请在 Web 控制台中配置并启动。
-  read_only_notice: 本客户端由 Web 控制台统一管控，无法在本地进行配置。
 
 auth:
   subtitle: 登录后连接您的 SDWAN 网络
@@ -467,6 +466,7 @@ auth:
   login_hint: 使用在 Web 控制台注册的账号登录
   register_hint: 注册账号与 Web 控制台共用
   logout: 退出登录
+  logout_failed: "退出登录时停止并删除网络失败：{error}"
 
 acl:
   title: 访问控制

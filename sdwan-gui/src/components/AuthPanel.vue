@@ -126,57 +126,93 @@ async function submit() {
 </script>
 
 <template>
-  <div class="flex flex-1 items-center justify-center p-4 overflow-y-auto">
-    <Card class="w-full max-w-md">
+  <div class="auth-page flex flex-1 w-full items-center justify-center overflow-y-auto p-4 md:p-8">
+    <Card class="auth-card w-full max-w-5xl h-full">
       <template #title>
-        <div class="text-center text-2xl font-semibold">SDWAN</div>
+        <div class="auth-title">SDWAN</div>
       </template>
       <template #subtitle>
-        <div class="text-center text-sm text-surface-500 dark:text-surface-400">{{ t('auth.subtitle') }}</div>
+        <div class="auth-subtitle">{{ t('auth.subtitle') }}</div>
       </template>
       <template #content>
-        <div class="flex flex-col gap-4">
-          <div class="flex gap-2">
-            <Button class="flex-1" :severity="tab === 'login' ? 'primary' : 'secondary'"
-              :label="t('auth.login')" @click="switchTab('login')" />
-            <Button class="flex-1" :severity="tab === 'register' ? 'primary' : 'secondary'"
-              :label="t('auth.register')" @click="switchTab('register')" />
+        <div
+          class="auth-content w-full mx-auto flex flex-col gap-5"
+        >
+          <div class="flex gap-3 w-full">
+            <Button
+              class="auth-tab flex-1"
+              :severity="tab === 'login' ? 'primary' : 'secondary'"
+              :label="t('auth.login')"
+              @click="switchTab('login')"
+            />
+            <Button
+              class="auth-tab flex-1"
+              :severity="tab === 'register' ? 'primary' : 'secondary'"
+              :label="t('auth.register')"
+              @click="switchTab('register')"
+            />
           </div>
 
-          <form class="flex flex-col gap-3" @submit.prevent="submit">
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium" for="auth-username">{{ t('auth.username') }}</label>
-              <input id="auth-username" v-model="usernameModel" type="text"
-                autocomplete="username" class="w-full rounded-md border border-surface-300 dark:border-surface-600 bg-transparent px-3 py-2 outline-none focus:border-primary"
-                :placeholder="t('auth.username_placeholder')" />
+          <form
+            class="auth-form grid grid-cols-1 md:grid-cols-2 gap-4 w-full"
+            @submit.prevent="submit"
+          >
+            <div class="flex flex-col gap-2">
+              <label class="auth-label" for="auth-username">{{ t('auth.username') }}</label>
+              <input
+                id="auth-username"
+                v-model="usernameModel"
+                type="text"
+                class="auth-input"
+                autocomplete="username"
+                :placeholder="t('auth.username_placeholder')"
+              >
             </div>
 
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium" for="auth-password">{{ t('auth.password') }}</label>
-              <input id="auth-password" v-model="passwordModel" type="password"
+            <div class="flex flex-col gap-2">
+              <label class="auth-label" for="auth-password">{{ t('auth.password') }}</label>
+              <input
+                id="auth-password"
+                v-model="passwordModel"
+                type="password"
+                class="auth-input"
                 :autocomplete="tab === 'login' ? 'current-password' : 'new-password'"
-                class="w-full rounded-md border border-surface-300 dark:border-surface-600 bg-transparent px-3 py-2 outline-none focus:border-primary"
-                :placeholder="t('auth.password_placeholder')" />
+                :placeholder="t('auth.password_placeholder')"
+              >
             </div>
 
-            <div v-if="tab === 'register'" class="flex flex-col gap-1">
-              <label class="text-sm font-medium" for="auth-captcha">{{ t('auth.captcha') }}</label>
-              <div class="flex gap-2">
-                <input id="auth-captcha" v-model="captcha" type="text" class="flex-1 rounded-md border border-surface-300 dark:border-surface-600 bg-transparent px-3 py-2 outline-none focus:border-primary"
-                  :placeholder="t('auth.captcha_placeholder')" />
-                <img :src="captchaImage" :alt="t('auth.captcha')" class="h-10 w-auto rounded border border-surface-300 cursor-pointer"
-                  :title="t('auth.captcha_refresh')" @click="loadCaptcha" />
+            <div v-if="tab === 'register'" class="flex flex-col gap-2 md:col-span-2">
+              <label class="auth-label" for="auth-captcha">{{ t('auth.captcha') }}</label>
+              <div class="flex gap-3">
+                <input
+                  id="auth-captcha"
+                  v-model="captcha"
+                  type="text"
+                  class="auth-input flex-1"
+                  :placeholder="t('auth.captcha_placeholder')"
+                >
+                <img
+                  :src="captchaImage"
+                  :alt="t('auth.captcha')"
+                  class="auth-captcha-img"
+                  :title="t('auth.captcha_refresh')"
+                  @click="loadCaptcha"
+                >
               </div>
             </div>
 
-            <div v-if="error" class="rounded-md bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-600 dark:text-red-300">
+            <div v-if="error" class="auth-error md:col-span-2">
               {{ error }}
             </div>
 
-            <Button type="submit" class="w-full" :label="tab === 'login' ? t('auth.login_button') : t('auth.register_button')"
-              :loading="loading" />
+            <Button
+              type="submit"
+              class="auth-submit md:col-span-2"
+              :label="tab === 'login' ? t('auth.login_button') : t('auth.register_button')"
+              :loading="loading"
+            />
 
-            <div class="text-xs text-surface-500 dark:text-surface-400 text-center">
+            <div class="auth-hint md:col-span-2">
               {{ tab === 'login' ? t('auth.login_hint') : t('auth.register_hint') }}
             </div>
           </form>
@@ -185,3 +221,126 @@ async function submit() {
     </Card>
   </div>
 </template>
+
+<style scoped lang="postcss">
+.auth-page {
+  min-height: 0;
+}
+
+.auth-card :deep(.p-card-body) {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 2rem 2.5rem;
+}
+
+.auth-card :deep(.p-card-title) {
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.auth-card :deep(.p-card-subtitle) {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-card :deep(.p-card-content) {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+}
+
+.auth-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.auth-subtitle {
+  font-size: 1.05rem;
+  text-align: center;
+  color: var(--p-surface-500);
+}
+
+.auth-content {
+  max-width: 56rem;
+  height: 100%;
+  justify-content: space-evenly;
+}
+
+.auth-form {
+  align-content: center;
+  row-gap: 1.25rem;
+  column-gap: 1.5rem;
+}
+
+.auth-tab {
+  min-height: 3.5rem;
+  font-size: 1.25rem;
+}
+
+.auth-label {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.auth-input {
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.85rem 1rem;
+  font-size: 1.05rem;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--p-surface-300);
+  border-radius: 0.5rem;
+  outline: none;
+}
+
+.auth-input:focus {
+  border-color: var(--p-primary-color);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
+}
+
+.auth-captcha-img {
+  height: 3rem;
+  min-width: 8rem;
+  object-fit: contain;
+  border: 1px solid var(--p-surface-300);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.auth-error {
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border-radius: 0.5rem;
+}
+
+.auth-submit {
+  min-height: 4rem;
+  font-size: 1.25rem;
+}
+
+.auth-hint {
+  font-size: 0.9rem;
+  color: var(--p-surface-500);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .auth-card :deep(.p-card-body) {
+    padding: 1.5rem;
+  }
+
+  .auth-title {
+    font-size: 1.75rem;
+  }
+}
+</style>
