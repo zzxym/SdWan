@@ -375,6 +375,39 @@ web:
     enable: 开启
     disable: 关闭
     address: 地址
+    close: 关闭
+
+  admin:
+    title: 运营管理
+    username: 用户名
+    status: 状态
+    actions: 操作
+    admin: 管理员
+    active: 正常
+    disabled: 已禁用
+    expired: 已过期
+    expire_at: 使用期限
+    never_expire: 永久有效
+    device_count: 客户端数
+    no_users: 暂无用户
+    promote: 提权为管理员
+    demote: 取消管理员
+    enable: 启用账号
+    disable: 禁用账号
+    set_expire: 设置期限
+    reset_password: 重置密码
+    manage_networks: 管理网络
+    new_password: 新密码
+    expire_days: 有效天数
+    days: 天
+    expire_hint: 填 0 表示永久有效；填 N 表示从现在起 N 天后到期。
+    machine: 客户端
+    no_networks: 该客户端没有网络实例
+    start: 启动
+    stop: 停止
+    save_success: 保存成功
+    delete_success: 删除成功
+    login_required: 需要管理员登录
 
   settings:
     title: 设置
@@ -460,6 +493,8 @@ auth:
   register_button: 注册并登录
   login_failed: 登录失败
   register_failed: 注册失败
+  account_disabled: 账号已被管理员禁用
+  account_expired: 账号已过期
   logout: 退出登录
   logout_failed: "退出登录时停止并删除网络失败：{error}"
 

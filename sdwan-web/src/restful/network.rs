@@ -31,7 +31,7 @@ fn convert_rpc_error(e: RpcError) -> (StatusCode, Json<Error>) {
     (status_code, Json(error))
 }
 
-fn convert_error(e: RemoteClientError<DbErr>) -> (StatusCode, Json<Error>) {
+pub fn convert_error(e: RemoteClientError<DbErr>) -> (StatusCode, Json<Error>) {
     match e {
         RemoteClientError::PersistentError(e) => convert_db_error(e),
         RemoteClientError::RpcError(e) => convert_rpc_error(e),
@@ -47,19 +47,19 @@ fn convert_error(e: RemoteClientError<DbErr>) -> (StatusCode, Json<Error>) {
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-struct ValidateConfigJsonReq {
-    config: NetworkConfig,
+pub struct ValidateConfigJsonReq {
+    pub config: NetworkConfig,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-struct SaveNetworkJsonReq {
-    config: NetworkConfig,
+pub struct SaveNetworkJsonReq {
+    pub config: NetworkConfig,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-struct RunNetworkJsonReq {
-    config: NetworkConfig,
-    save: bool,
+pub struct RunNetworkJsonReq {
+    pub config: NetworkConfig,
+    pub save: bool,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -68,8 +68,8 @@ struct CollectNetworkInfoJsonReq {
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-struct UpdateNetworkStateJsonReq {
-    disabled: bool,
+pub struct UpdateNetworkStateJsonReq {
+    pub disabled: bool,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]

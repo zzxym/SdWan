@@ -1,4 +1,5 @@
 import { Md5 } from 'ts-md5'
+import { I18nUtils } from 'sdwan-frontend-lib'
 
 /**
  * Web 控制台（sdwan-web）认证接口封装。
@@ -91,6 +92,23 @@ export async function login(username: string, password: string): Promise<AuthRes
     })
     return { success: true, message: '' }
   } catch (e) {
-    return { success: false, message: e instanceof Error ? e.message : String(e) }
+    return { success: false, message: localizeAuthError(e) }
   }
+}
+
+/**
+ * 把服务端返回的账号状态原因映射为本地化文案。
+ *
+ * 服务端在账号被禁用或过期时返回 403，并带上英文原因，这里翻译成界面语言。
+ */
+function localizeAuthError(e: unknown): string {
+  const raw = e instanceof Error ? e.message : String(e)
+  const t = I18nUtils.i18n.global.t as (key: string) => string
+  if (raw.includes('disabled by administrator')) {
+    return t('auth.account_disabled')
+  }
+  if (raw.includes('has expired')) {
+    return t('auth.account_expired')
+  }
+  return raw
 }

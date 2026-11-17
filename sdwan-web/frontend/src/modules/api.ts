@@ -44,6 +44,22 @@ export interface Summary {
     device_count: number;
 }
 
+/** 运营管理接口返回的用户条目。 */
+export interface AdminUserItem {
+    id: number;
+    username: string;
+    is_admin: boolean;
+    enabled: boolean;
+    /** 使用期限（Unix 秒），为空表示永久有效。 */
+    expire_at: number | null;
+    expired: boolean;
+    device_count: number;
+}
+
+export interface ListAdminUsersResponse {
+    users: AdminUserItem[];
+}
+
 export interface ListNetworkInstanceIdResponse {
     running_inst_ids: Array<Utils.UUID>,
     disabled_inst_ids: Array<Utils.UUID>,
@@ -180,6 +196,86 @@ export class ApiClient {
     public async get_summary(): Promise<Summary> {
         const response = await this.client.get<any, Summary>('/summary');
         return response;
+    }
+
+    // ---------------- 运营管理接口 ----------------
+
+    /** 列出全部用户及其管理状态（需要管理员权限）。 */
+    public async admin_list_users(): Promise<AdminUserItem[]> {
+        const response = await this.client.get<any, ListAdminUsersResponse>('/admin/users');
+        return response.users;
+    }
+
+    /** 提权 / 降权：把用户加入或移出 admins 组。 */
+    public async admin_set_role(username: string, is_admin: boolean) {
+        await this.client.post(`/admin/users/${encodeURIComponent(username)}/role`, { is_admin });
+    }
+
+    /** 启用 / 禁用账号。 */
+    public async admin_set_enabled(username: string, enabled: boolean) {
+        await this.client.post(`/admin/users/${encodeURIComponent(username)}/enabled`, { enabled });
+    }
+
+    /** 设置使用期限（Unix 秒），传 null 表示永久有效。 */
+    public async admin_set_expire(username: string, expire_at: number | null) {
+        await this.client.post(`/admin/users/${encodeURIComponent(username)}/expire`, { expire_at });
+    }
+
+    /** 重置指定用户的密码。 */
+    public async admin_reset_password(username: string, new_password: string) {
+        await this.client.post(`/admin/users/${encodeURIComponent(username)}/password`, { new_password });
+    }
+
+    /** 列出指定用户的机器（客户端）。 */
+    public async admin_list_user_machines(username: string): Promise<Array<any>> {
+        const response = await this.client.get<any, { machines: Array<any> }>(
+            `/admin/users/${encodeURIComponent(username)}/machines`);
+        return response.machines;
+    }
+
+    /** 列出指定用户在某台机器上的网络实例 id。 */
+    public async admin_list_user_networks(username: string, machine_id: string): Promise<ListNetworkInstanceIdResponse> {
+        const response = await this.client.get<any, ListNetworkInstanceIdResponse>(
+            `/admin/users/${encodeURIComponent(username)}/machines/${machine_id}/networks`);
+        return response;
+    }
+
+    /** 删除指定用户的网络实例。 */
+    public async admin_delete_user_network(username: string, machine_id: string, inst_id: string) {
+        await this.client.delete(
+            `/admin/users/${encodeURIComponent(username)}/machines/${machine_id}/networks/${inst_id}`);
+    }
+
+    /** 启用 / 停用指定用户的网络实例。 */
+    public async admin_update_user_network_state(
+        username: string, machine_id: string, inst_id: string, disabled: boolean) {
+        await this.client.put(
+            `/admin/users/${encodeURIComponent(username)}/machines/${machine_id}/networks/${inst_id}`,
+            { disabled });
+    }
+
+    /** 读取指定用户的网络实例配置。 */
+    public async admin_get_user_network_config(
+        username: string, machine_id: string, inst_id: string): Promise<NetworkTypes.NetworkConfig> {
+        const response = await this.client.get<any, NetworkTypes.NetworkConfig>(
+            `/admin/users/${encodeURIComponent(username)}/machines/${machine_id}/networks/config/${inst_id}`);
+        return NetworkTypes.normalizeNetworkConfig(response);
+    }
+
+    /** 保存指定用户的网络实例配置。 */
+    public async admin_save_user_network_config(
+        username: string, machine_id: string, config: NetworkTypes.NetworkConfig) {
+        await this.client.put(
+            `/admin/users/${encodeURIComponent(username)}/machines/${machine_id}/networks/config/${config.instance_id}`,
+            { config: NetworkTypes.toBackendNetworkConfig(config) });
+    }
+
+    /** 为指定用户新增并运行一个网络实例。 */
+    public async admin_run_user_network(
+        username: string, machine_id: string, config: NetworkTypes.NetworkConfig, save = true) {
+        await this.client.post(
+            `/admin/users/${encodeURIComponent(username)}/machines/${machine_id}/networks`,
+            { config: NetworkTypes.toBackendNetworkConfig(config), save });
     }
 
     public captcha_url() {

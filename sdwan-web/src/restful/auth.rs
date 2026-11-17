@@ -7,7 +7,7 @@ use axum_login::login_required;
 use axum_messages::Message;
 use serde::{Deserialize, Serialize};
 
-use crate::restful::users::Backend;
+use crate::restful::users::{Backend, UserUsable};
 
 use std::sync::Arc;
 
@@ -110,6 +110,10 @@ mod post {
         let user = match auth_session.authenticate(creds.clone()).await {
             Ok(Some(user)) => user,
             Ok(None) => {
+                // 口令正确但账号被禁用/过期时给出明确原因，便于客户端提示用户。
+                if let Some(reason) = account_state_reason(&auth_session, &creds.username).await {
+                    return Err((StatusCode::FORBIDDEN, Json::from(other_error(reason))));
+                }
                 return Err((
                     StatusCode::UNAUTHORIZED,
                     Json::from(other_error("Invalid credentials")),
@@ -131,6 +135,30 @@ mod post {
         }
 
         Ok(Void::default().into())
+    }
+
+    /// 查询账号状态，仅在口令正确但账号不可用时返回原因描述。
+    async fn account_state_reason(
+        auth_session: &AuthSession,
+        username: &str,
+    ) -> Option<String> {
+        use crate::db::entity::users;
+        use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+
+        let user = users::Entity::find()
+            .filter(users::Column::Username.eq(username.to_string()))
+            .one(auth_session.backend.db().orm_db())
+            .await
+            .ok()
+            .flatten()?;
+
+        if !user.enabled {
+            return Some("Account is disabled by administrator".to_string());
+        }
+        if user.is_expired() {
+            return Some("Account has expired".to_string());
+        }
+        None
     }
 
     pub async fn register(

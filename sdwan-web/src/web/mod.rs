@@ -44,6 +44,12 @@ pub fn build_router(api_host: Option<url::Url>) -> Router {
     let service = ServeEmbed::<Assets>::new();
     let router = Router::new();
 
+    // 运营管理入口：`http://<host>:<port>/xlxxadmin`
+    //
+    // 前端使用 hash 路由，直接访问该路径拿不到 index.html（ServeEmbed 未命中即 404），
+    // 因此这里返回一份注入了跳转脚本的 index.html，把 hash 路由指向管理页。
+    let router = router.route("/xlxxadmin", routing::get(handle_admin_entry));
+
     let router = if let Some(api_host) = api_host {
         let sub_router = Router::new()
             .route("/api_meta.js", routing::get(handle_api_meta))
@@ -54,6 +60,32 @@ pub fn build_router(api_host: Option<url::Url>) -> Router {
     };
 
     router.fallback_service(service)
+}
+
+/// 运营管理入口页面：在 index.html 中注入脚本，把 hash 路由切到 `#/xlxxadmin`。
+async fn handle_admin_entry() -> Response {
+    let Some(index) = Assets::get("index.html") else {
+        return Response::builder()
+            .status(axum::http::StatusCode::NOT_FOUND)
+            .body(axum::body::Body::from("index.html not found"))
+            .unwrap();
+    };
+
+    let mut html = String::from_utf8_lossy(index.data.as_ref()).to_string();
+
+    // 在应用脚本执行前设置 hash 路由，避免先渲染默认页面再跳转。
+    const BOOTSTRAP: &str = r##"<script>window.location.replace("#/xlxxadmin" + window.location.search + window.location.hash);</script>"##;
+    if let Some(pos) = html.find("</head>") {
+        html.insert_str(pos, BOOTSTRAP);
+    } else {
+        html.insert_str(0, BOOTSTRAP);
+    }
+
+    Response::builder()
+        .header(header::CONTENT_TYPE, "text/html; charset=utf-8")
+        .header(header::CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+        .body(axum::body::Body::from(html))
+        .unwrap()
 }
 
 pub struct WebServer {

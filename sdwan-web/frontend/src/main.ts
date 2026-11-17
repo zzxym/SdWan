@@ -17,6 +17,7 @@ import Dashboard from './components/Dashboard.vue'
 import DialogService from 'primevue/dialogservice';
 import ToastService from 'primevue/toastservice';
 import ConfigGenerator from './components/ConfigGenerator.vue'
+import AdminUsers from './components/AdminUsers.vue'
 
 const routes = [
     {
@@ -57,6 +58,12 @@ const routes = [
                 ]
             },
         ]
+    },
+    {
+        // 运营管理页入口：`http://<host>:<port>/xlxxadmin`
+        path: '/xlxxadmin',
+        name: 'xlxxadmin',
+        component: AdminUsers,
     },
     {
         path: '/:pathMatch(.*)*', name: 'notFound', redirect: () => {

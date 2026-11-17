@@ -11,6 +11,10 @@ pub struct Model {
     #[sea_orm(unique)]
     pub username: String,
     pub password: String,
+    /// 是否启用。内置 `admin` 用户默认禁用；禁用后无法登录且已有会话立即失效。
+    pub enabled: bool,
+    /// 使用期限（Unix 秒）。`None` 表示永久有效，过期后按禁用处理。
+    pub expire_at: Option<i64>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
