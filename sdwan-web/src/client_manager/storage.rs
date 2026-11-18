@@ -114,6 +114,28 @@ impl Storage {
             .unwrap_or_default()
     }
 
+    pub fn list_user_clients_with_machine_id(
+        &self,
+        user_id: UserIdInDb,
+    ) -> Vec<(uuid::Uuid, url::Url)> {
+        self.0
+            .user_clients_map
+            .get(&user_id)
+            .map(|info_map| {
+                info_map
+                    .iter()
+                    .map(|info| {
+                        let info = info.value();
+                        (
+                            info.storage_token.machine_id,
+                            info.storage_token.client_url.clone(),
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     pub fn db(&self) -> &Db {
         &self.0.db
     }

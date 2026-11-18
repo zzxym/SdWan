@@ -197,6 +197,14 @@ impl ClientManager {
         self.storage.list_user_clients(user_id)
     }
 
+    /// 列出某个用户的所有机器，附带 machine_id，用于踢出等操作。
+    pub async fn list_machines_with_ids(
+        &self,
+        user_id: UserIdInDb,
+    ) -> Vec<(uuid::Uuid, url::Url)> {
+        self.storage.list_user_clients_with_machine_id(user_id)
+    }
+
     pub async fn get_heartbeat_requests(&self, client_url: &url::Url) -> Option<HeartbeatRequest> {
         let s = self.client_sessions.get(client_url)?.clone();
         s.data().read().await.req()

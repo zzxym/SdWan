@@ -13,6 +13,7 @@ use crate::{
     connector::create_connector_by_url,
     instance_manager::{DaemonGuard, NetworkInstanceManager},
     proto::common::NatType,
+    proto::web::HeartbeatResponse,
     tunnel::{IpVersion, Tunnel, TunnelConnector, TunnelError, TunnelScheme},
 };
 use anyhow::{Context as _, Result};
@@ -88,6 +89,7 @@ pub struct WebClient {
     tasks: AbortOnDropHandle<()>,
     manager_guard: DaemonGuard,
     connected: Arc<AtomicBool>,
+    heartbeat_resp: Arc<tokio::sync::Mutex<Option<HeartbeatResponse>>>,
 }
 
 struct ConfigServerConnector {
@@ -135,14 +137,17 @@ impl WebClient {
             hooks,
         ));
         let connected = Arc::new(AtomicBool::new(false));
+        let heartbeat_resp = Arc::new(tokio::sync::Mutex::new(None));
 
         let controller_clone = controller.clone();
         let connected_clone = connected.clone();
+        let heartbeat_resp_clone = heartbeat_resp.clone();
         let tasks = AbortOnDropHandle::new(tokio::spawn(async move {
             Self::routine(
                 controller_clone,
                 connected_clone,
                 secure_mode,
+                heartbeat_resp_clone,
                 Box::new(connector),
             )
             .await;
@@ -153,6 +158,7 @@ impl WebClient {
             tasks,
             manager_guard,
             connected,
+            heartbeat_resp,
         }
     }
 
@@ -160,6 +166,7 @@ impl WebClient {
         controller: Arc<controller::Controller>,
         connected: Arc<AtomicBool>,
         secure_mode: bool,
+        heartbeat_resp: Arc<tokio::sync::Mutex<Option<HeartbeatResponse>>>,
         mut connector: Box<dyn TunnelConnector>,
     ) {
         loop {
@@ -176,7 +183,8 @@ impl WebClient {
             connected.store(true, Ordering::Release);
             log::info!("Successfully connected to {:?}", conn.info());
 
-            let mut session = session::Session::new(conn, controller.clone());
+            let mut session =
+                session::Session::new(conn, controller.clone(), heartbeat_resp.clone());
             let support_encryption = match tokio::time::timeout(
                 std::time::Duration::from_secs(3),
                 session.get_feature(),
@@ -243,7 +251,8 @@ impl WebClient {
                     }
                 };
 
-                let mut session = session::Session::new(conn, controller.clone());
+                let mut session =
+                    session::Session::new(conn, controller.clone(), heartbeat_resp.clone());
                 session.start_heartbeat().await;
                 session.wait().await;
                 connected.store(false, Ordering::Release);
@@ -286,6 +295,11 @@ impl WebClient {
 
     pub fn is_connected(&self) -> bool {
         self.connected.load(Ordering::Acquire)
+    }
+
+    /// 返回最近一次心跳响应中的用户授权与使用期限信息（在线数/总授权数、到期时间）。
+    pub async fn client_limit_info(&self) -> Option<HeartbeatResponse> {
+        self.heartbeat_resp.lock().await.clone()
     }
 }
 

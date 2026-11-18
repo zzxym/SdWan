@@ -86,8 +86,13 @@ impl Backend {
 
     pub async fn register_new_user(&self, new_user: &RegisterNewUser) -> anyhow::Result<()> {
         let hashed_password = password_auth::generate_hash(new_user.credentials.password.as_str());
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        let expire_at = Some(now + 30 * 24 * 3600);
         self.db
-            .create_user_and_join_users_group(&new_user.credentials.username, hashed_password)
+            .create_user_and_join_users_group(&new_user.credentials.username, hashed_password, expire_at)
             .await?;
         Ok(())
     }

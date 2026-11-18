@@ -52,7 +52,7 @@ const onSubmit = async () => {
             params: { apiHost: btoa(apiHost.value) },
         });
     } else {
-        toast.add({ severity: 'error', summary: 'Login Failed', detail: ret.message, life: 2000 });
+        toast.add({ severity: 'error', summary: t('auth.login_failed'), detail: t(ret.message), life: 2000 });
     }
 };
 

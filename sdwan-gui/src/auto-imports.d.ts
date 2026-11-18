@@ -37,6 +37,7 @@ declare global {
   const generateNetworkConfig: typeof import('./composables/backend')['generateNetworkConfig']
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getCaptcha: typeof import('./composables/auth')['getCaptcha']
+  const getClientLimitInfo: typeof import('./composables/backend')['getClientLimitInfo']
   const getConfig: typeof import('./composables/backend')['getConfig']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
@@ -186,6 +187,7 @@ declare module 'vue' {
     readonly generateNetworkConfig: UnwrapRef<typeof import('./composables/backend')['generateNetworkConfig']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getCaptcha: UnwrapRef<typeof import('./composables/auth')['getCaptcha']>
+    readonly getClientLimitInfo: UnwrapRef<typeof import('./composables/backend')['getClientLimitInfo']>
     readonly getConfig: UnwrapRef<typeof import('./composables/backend')['getConfig']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>

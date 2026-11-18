@@ -7,6 +7,7 @@ use anyhow::Context;
 use sdwan::proto::api::manage::{
     CollectNetworkInfoResponse, WebClientService, WebClientServiceClientFactory,
 };
+use sdwan::proto::web::HeartbeatResponse;
 use sdwan::rpc_service::remote_client::{
     GetNetworkMetasResponse, ListNetworkInstanceIdsJsonResp, ListNetworkProps, RemoteClientManager,
     Storage,
@@ -456,6 +457,17 @@ async fn is_web_client_connected() -> Result<bool, String> {
         Ok(web_client.is_connected())
     } else {
         Ok(false)
+    }
+}
+
+/// 返回当前用户的授权与使用期限信息（在线客户端数/总授权数、到期时间）。
+#[tauri::command]
+async fn get_client_limit_info() -> Result<Option<HeartbeatResponse>, String> {
+    let web_client_guard = WEB_CLIENT.read().await;
+    if let Some(web_client) = web_client_guard.as_ref() {
+        Ok(web_client.client_limit_info().await)
+    } else {
+        Ok(None)
     }
 }
 
@@ -1344,6 +1356,7 @@ pub fn run_gui() -> std::process::ExitCode {
             set_allowed_network_name,
             init_web_client,
             is_web_client_connected,
+            get_client_limit_info,
             get_log_dir_path,
         ])
         .on_window_event(|_win, event| match event {

@@ -153,13 +153,21 @@ export class ApiClient {
             return { success: true, message: 'Login success', };
         } catch (error) {
             if (error instanceof AxiosError) {
-                if (error.response?.status === 401) {
-                    return { success: false, message: 'Invalid username or password', };
-                } else {
-                    return { success: false, message: 'Unknown error, status code: ' + error.response?.status, };
+                const status = error.response?.status;
+                const msg = String(error.response?.data ?? '');
+                if (status === 401) {
+                    return { success: false, message: 'auth.invalid_credentials', };
+                } else if (status === 403) {
+                    if (msg.includes('disabled')) {
+                        return { success: false, message: 'auth.account_disabled', };
+                    }
+                    if (msg.includes('expired')) {
+                        return { success: false, message: 'auth.account_expired', };
+                    }
                 }
+                return { success: false, message: 'auth.login_failed', };
             }
-            return { success: false, message: 'Unknown error, error: ' + error, };
+            return { success: false, message: 'auth.login_failed', };
         }
     }
 
@@ -231,6 +239,13 @@ export class ApiClient {
         const response = await this.client.get<any, { machines: Array<any> }>(
             `/admin/users/${encodeURIComponent(username)}/machines`);
         return response.machines;
+    }
+
+    /** 踢出指定用户的一台在线客户端。 */
+    public async admin_kick_machine(username: string, machine_id: string): Promise<{ success: boolean }> {
+        const response = await this.client.post<any, { success: boolean }>(
+            `/admin/users/${encodeURIComponent(username)}/machines/${machine_id}/kick`, {});
+        return response;
     }
 
     /** 列出指定用户在某台机器上的网络实例 id。 */

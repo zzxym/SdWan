@@ -5,10 +5,12 @@ import { Utils } from 'sdwan-frontend-lib'
 import type { NetworkTypes } from 'sdwan-frontend-lib'
 import {
   collectNetworkInfo,
+  getClientLimitInfo,
   isClientRunning,
   isWebClientConnected,
   listNetworkInstanceIds,
 } from '~/composables/backend'
+import type { ClientLimitInfo } from '~/composables/backend'
 import { isPreviewMode, PREVIEW_INSTANCES, previewNetworkInfo } from '~/composables/preview'
 
 /**
@@ -25,9 +27,18 @@ const { t } = useI18n()
 const clientRunning = ref(false)
 const webConnected = ref(false)
 const currentInfo = ref<NetworkTypes.NetworkInstance | null>(null)
+/** 当前用户的授权与使用期限信息（在线客户端数/总授权数、到期时间）。 */
+const limitInfo = ref<ClientLimitInfo | null>(null)
 
 const REFRESH_INTERVAL_MS = 2000
 let timer: ReturnType<typeof setInterval> | undefined
+
+function formatExpire(expireAt?: number | null): string {
+  if (!expireAt || expireAt <= 0) {
+    return t('client.status_never_expire')
+  }
+  return new Date(expireAt * 1000).toLocaleString()
+}
 
 async function loadDetail(uuid: string) {
   if (isPreviewMode()) {
@@ -55,12 +66,18 @@ async function refresh() {
   if (isPreviewMode()) {
     clientRunning.value = true
     webConnected.value = true
+    limitInfo.value = {
+      client_limit: 2,
+      online_client_count: 1,
+      expire_at: Math.floor(Date.now() / 1000) + 30 * 86400,
+    }
     await loadDetail(PREVIEW_INSTANCES[0]?.uuid ?? '')
     return
   }
 
   clientRunning.value = await isClientRunning().catch(() => false)
   webConnected.value = await isWebClientConnected().catch(() => false)
+  limitInfo.value = await getClientLimitInfo().catch(() => null)
 
   if (!clientRunning.value) {
     currentInfo.value = null
@@ -100,20 +117,30 @@ onUnmounted(() => {
         {{ t('client.status_title') }}
       </template>
       <template #content>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_client') }}</span>
-            <span class="flex items-center gap-2 font-medium">
-              <i class="pi pi-circle-fill text-xs" :class="clientRunning ? 'text-green-500' : 'text-red-500'" />
-              {{ clientRunning ? t('client.status_running') : t('client.status_stopped') }}
-            </span>
+        <div class="flex flex-col gap-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+              <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_client') }}</span>
+              <span class="flex items-center gap-2 font-medium">
+                <i class="pi pi-circle-fill text-xs" :class="clientRunning ? 'text-green-500' : 'text-red-500'" />
+                {{ clientRunning ? t('client.status_running') : t('client.status_stopped') }}
+              </span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_web_console') }}</span>
+              <span class="flex items-center gap-2 font-medium">
+                <i class="pi pi-circle-fill text-xs" :class="webConnected ? 'text-green-500' : 'text-orange-500'" />
+                {{ webConnected ? t('client.status_web_connected') : t('client.status_web_disconnected') }}
+              </span>
+              <span v-if="limitInfo" class="text-sm font-medium">
+                {{ t('client.status_authorization') }}：{{ limitInfo.online_client_count }}/{{ limitInfo.client_limit > 0 ? limitInfo.client_limit : '∞' }}
+              </span>
+            </div>
           </div>
+
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_web_console') }}</span>
-            <span class="flex items-center gap-2 font-medium">
-              <i class="pi pi-circle-fill text-xs" :class="webConnected ? 'text-green-500' : 'text-orange-500'" />
-              {{ webConnected ? t('client.status_web_connected') : t('client.status_web_disconnected') }}
-            </span>
+            <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_usage_period') }}</span>
+            <span class="font-medium">{{ formatExpire(limitInfo?.expire_at) }}</span>
           </div>
         </div>
       </template>

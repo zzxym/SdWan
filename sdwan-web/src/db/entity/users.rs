@@ -15,6 +15,9 @@ pub struct Model {
     pub enabled: bool,
     /// 使用期限（Unix 秒）。`None` 表示永久有效，过期后按禁用处理。
     pub expire_at: Option<i64>,
+    /// 客户端数量上限。0 表示不限制。
+    #[sea_orm(default_value = "2")]
+    pub client_limit: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

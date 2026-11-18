@@ -150,6 +150,17 @@ export async function isWebClientConnected() {
   return await invoke<boolean>('is_web_client_connected')
 }
 
+export interface ClientLimitInfo {
+  client_limit: number
+  online_client_count: number
+  expire_at: number
+}
+
+/** 获取当前用户的授权与使用期限信息（在线客户端数/总授权数、到期时间）。 */
+export async function getClientLimitInfo() {
+  return await invoke<ClientLimitInfo | null>('get_client_limit_info')
+}
+
 // ---------------------------------------------------------------------------
 // 写入类接口：只读客户端一律拒绝
 // ---------------------------------------------------------------------------

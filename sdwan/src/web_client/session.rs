@@ -38,7 +38,11 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new(tunnel: Box<dyn Tunnel>, controller: Arc<Controller>) -> Self {
+    pub fn new(
+        tunnel: Box<dyn Tunnel>,
+        controller: Arc<Controller>,
+        resp: Arc<Mutex<Option<HeartbeatResponse>>>,
+    ) -> Self {
         let rpc_mgr = BidirectRpcManager::new();
         rpc_mgr.run_with_tunnel(tunnel);
 
@@ -47,7 +51,7 @@ impl Session {
         let (tx, _rx1) = broadcast::channel(2);
         let heartbeat_ctx = HeartbeatCtx {
             notifier: Arc::new(tx),
-            resp: Arc::new(Mutex::new(None)),
+            resp,
         };
 
         Session {

@@ -212,6 +212,25 @@ async function deleteNetworkInstance(inst: { id: string }) {
     }
 }
 
+/** 踢出当前选中的在线客户端（断开其与配置服务器的会话）。 */
+async function kickMachine() {
+    if (!networkTarget.value || !networkMachineId.value) {
+        return;
+    }
+    try {
+        await api.admin_kick_machine(networkTarget.value.username, networkMachineId.value);
+        toast.add({ severity: 'success', summary: t('web.admin.kick_success'), life: 2000 });
+        await loadUserMachines();
+    } catch (e: any) {
+        toast.add({
+            severity: 'error',
+            summary: t('error'),
+            detail: e?.response?.data?.message ?? String(e),
+            life: 3000,
+        });
+    }
+}
+
 // ---------------------------------------------------------------- 用户操作
 async function loadUsers() {
     loading.value = true;
@@ -309,7 +328,7 @@ onMounted(loadUsers);
 
             <Column :header="t('web.admin.device_count')" style="width: 8rem">
                 <template #body="{ data }">
-                    {{ data.device_count }}
+                    {{ data.device_count }}/{{ data.client_limit > 0 ? data.client_limit : '∞' }}
                 </template>
             </Column>
 
@@ -397,6 +416,8 @@ onMounted(loadUsers);
                 </ul>
             </div>
             <template #footer>
+                <Button :label="t('web.admin.kick_client')" severity="danger" outlined
+                    :disabled="!networkMachineId" @click="kickMachine" />
                 <Button :label="t('web.common.close')" severity="secondary"
                     @click="networkDialogVisible = false" />
             </template>

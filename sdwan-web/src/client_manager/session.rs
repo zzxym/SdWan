@@ -295,7 +295,11 @@ impl SessionRpcService {
 
         let Ok(storage) = Storage::try_from(data.storage.clone()) else {
             tracing::error!("Failed to get storage");
-            return Ok(HeartbeatResponse {});
+            return Ok(HeartbeatResponse {
+                client_limit: 0,
+                online_client_count: 0,
+                expire_at: 0,
+            });
         };
 
         let machine_id: uuid::Uuid = req.machine_id.map(Into::into).ok_or(anyhow::anyhow!(
@@ -399,6 +403,32 @@ impl SessionRpcService {
 
         if data.req.replace(req.clone()).is_none() {
             assert!(data.storage_token.is_none());
+
+            // 客户端数量限制校验：新机器注册时，若用户已达授权上限则拒绝。
+            if storage.get_client_url_by_machine_id(user_id, &machine_id).is_none() {
+                if let Some(user) = storage
+                    .db()
+                    .get_user_by_id(user_id)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("DB error: {:?}", e))?
+                {
+                    if user.client_limit > 0 {
+                        let online_count = storage.list_user_clients(user_id).len();
+                        if online_count >= user.client_limit as usize {
+                            return Err(
+                                anyhow::anyhow!(
+                                    "Client limit reached for user {:?}: {}/{}",
+                                    user_id,
+                                    online_count,
+                                    user.client_limit
+                                )
+                                .into(),
+                            );
+                        }
+                    }
+                }
+            }
+
             data.storage_token = Some(StorageToken {
                 token: req.user_token.clone(),
                 client_url: data.client_url.clone(),
@@ -430,7 +460,11 @@ impl SessionRpcService {
 
         let Ok(report_time) = chrono::DateTime::<chrono::Local>::from_str(&req.report_time) else {
             tracing::error!("Failed to parse report time: {:?}", req.report_time);
-            return Ok(HeartbeatResponse {});
+            return Ok(HeartbeatResponse {
+                client_limit: 0,
+                online_client_count: 0,
+                expire_at: 0,
+            });
         };
         storage.update_client(
             data.storage_token.as_ref().unwrap().clone(),
@@ -438,7 +472,23 @@ impl SessionRpcService {
         );
 
         let _ = data.notifier.send(req);
-        Ok(HeartbeatResponse {})
+
+        // 下发用户的授权与使用期限信息，供客户端状态面板展示（在线数/总授权数、使用期限）。
+        let (client_limit, online_client_count, expire_at) =
+            match storage.db().get_user_by_id(user_id).await {
+                Ok(Some(user)) => (
+                    user.client_limit,
+                    storage.list_user_clients(user_id).len() as i32,
+                    user.expire_at.unwrap_or(0),
+                ),
+                _ => (0, 0, 0),
+            };
+
+        Ok(HeartbeatResponse {
+            client_limit,
+            online_client_count,
+            expire_at,
+        })
     }
 }
 

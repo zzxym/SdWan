@@ -147,6 +147,7 @@ impl Db {
         &self,
         username: &str,
         password_hash: String,
+        expire_at: Option<i64>,
     ) -> Result<entity::users::Model, DbErr> {
         use entity::{groups, users, users_groups};
 
@@ -155,6 +156,8 @@ impl Db {
         let user_active = users::ActiveModel {
             username: Set(username.to_string()),
             password: Set(password_hash),
+            client_limit: Set(2),
+            expire_at: Set(expire_at),
             ..Default::default()
         };
         let insert_result = users::Entity::insert(user_active).exec(&txn).await?;
@@ -188,7 +191,7 @@ impl Db {
             tokio::task::spawn_blocking(move || password_auth::generate_hash(&random_password))
                 .await
                 .map_err(|e| DbErr::Custom(format!("Failed to hash password: {}", e)))?;
-        self.create_user_and_join_users_group(username, hashed_password)
+        self.create_user_and_join_users_group(username, hashed_password, None)
             .await
     }
 
@@ -198,6 +201,15 @@ impl Db {
         token: T,
     ) -> Result<Option<UserIdInDb>, DbErr> {
         self.get_user_id(token).await
+    }
+
+    pub async fn get_user_by_id(
+        &self,
+        user_id: UserIdInDb,
+    ) -> Result<Option<entity::users::Model>, DbErr> {
+        entity::users::Entity::find_by_id(user_id)
+            .one(self.orm_db())
+            .await
     }
 }
 

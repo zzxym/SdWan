@@ -48,6 +48,8 @@ pub struct AdminUserItem {
     pub expired: bool,
     /// 该用户名下已注册的客户端（机器）数量。
     pub device_count: usize,
+    /// 客户端数量上限。0 表示不限制。
+    pub client_limit: i32,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -175,6 +177,7 @@ impl AdminApi {
                 expire_at: user.expire_at,
                 expired: user.is_expired(),
                 device_count,
+                client_limit: user.client_limit,
             });
         }
 
@@ -345,12 +348,13 @@ impl AdminApi {
         let backend = auth_session.backend.clone();
         let target_id = Self::find_user_id(&backend, &username).await?;
 
-        let client_urls = client_mgr.list_machine_by_user_id(target_id).await;
+        let client_pairs = client_mgr.list_machines_with_ids(target_id).await;
         let mut machines = vec![];
-        for client_url in client_urls.iter() {
+        for (machine_id, client_url) in client_pairs.iter() {
             let session = client_mgr.get_heartbeat_requests(client_url).await;
             let location = client_mgr.get_machine_location(client_url).await;
             machines.push(serde_json::json!({
+                "machine_id": machine_id,
                 "client_url": client_url.to_string(),
                 "info": session,
                 "location": location,
@@ -358,6 +362,24 @@ impl AdminApi {
         }
 
         Ok(Json(serde_json::json!({ "machines": machines })))
+    }
+
+    /// 踢出某个用户下的一台在线客户端。
+    async fn handle_kick_machine(
+        auth_session: AuthSession,
+        State(client_mgr): AppState,
+        Path((username, machine_id)): Path<(String, uuid::Uuid)>,
+    ) -> Result<Json<serde_json::Value>, HttpHandleError> {
+        Self::require_admin(&auth_session).await?;
+
+        let backend = auth_session.backend.clone();
+        let target_id = Self::find_user_id(&backend, &username).await?;
+
+        let kicked = client_mgr
+            .disconnect_session_by_machine_id(target_id, &machine_id)
+            .await;
+
+        Ok(Json(serde_json::json!({ "success": kicked })))
     }
 
     /// 列出某个用户在某台机器上的网络实例 id。
@@ -509,6 +531,10 @@ impl AdminApi {
             .route(
                 "/api/v1/admin/users/:username/machines",
                 get(Self::handle_list_user_machines),
+            )
+            .route(
+                "/api/v1/admin/users/:username/machines/:machine-id/kick",
+                post(Self::handle_kick_machine),
             )
             .route(
                 "/api/v1/admin/users/:username/machines/:machine-id/networks",

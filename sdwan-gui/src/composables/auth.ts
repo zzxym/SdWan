@@ -110,5 +110,8 @@ function localizeAuthError(e: unknown): string {
   if (raw.includes('has expired')) {
     return t('auth.account_expired')
   }
+  if (raw.toLowerCase().includes('invalid credentials')) {
+    return t('auth.invalid_credentials')
+  }
   return raw
 }

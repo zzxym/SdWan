@@ -74,7 +74,7 @@ async fn handle_admin_entry() -> Response {
     let mut html = String::from_utf8_lossy(index.data.as_ref()).to_string();
 
     // 在应用脚本执行前设置 hash 路由，避免先渲染默认页面再跳转。
-    const BOOTSTRAP: &str = r##"<script>window.location.replace("#/xlxxadmin" + window.location.search + window.location.hash);</script>"##;
+    const BOOTSTRAP: &str = r##"<script>if(!window.location.hash||window.location.hash.indexOf("#/xlxxadmin")!==0){window.location.replace("#/xlxxadmin"+window.location.search);}</script>"##;
     if let Some(pos) = html.find("</head>") {
         html.insert_str(pos, BOOTSTRAP);
     } else {
