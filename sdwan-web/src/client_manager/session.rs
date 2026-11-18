@@ -405,7 +405,10 @@ impl SessionRpcService {
             assert!(data.storage_token.is_none());
 
             // 客户端数量限制校验：新机器注册时，若用户已达授权上限则拒绝。
-            if storage.get_client_url_by_machine_id(user_id, &machine_id).is_none() {
+            if storage
+                .get_client_url_by_machine_id(user_id, &machine_id)
+                .is_none()
+            {
                 if let Some(user) = storage
                     .db()
                     .get_user_by_id(user_id)
@@ -415,15 +418,13 @@ impl SessionRpcService {
                     if user.client_limit > 0 {
                         let online_count = storage.list_user_clients(user_id).len();
                         if online_count >= user.client_limit as usize {
-                            return Err(
-                                anyhow::anyhow!(
-                                    "Client limit reached for user {:?}: {}/{}",
-                                    user_id,
-                                    online_count,
-                                    user.client_limit
-                                )
-                                .into(),
-                            );
+                            return Err(anyhow::anyhow!(
+                                "Client limit reached for user {:?}: {}/{}",
+                                user_id,
+                                online_count,
+                                user.client_limit
+                            )
+                            .into());
                         }
                     }
                 }

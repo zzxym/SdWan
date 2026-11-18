@@ -198,10 +198,7 @@ impl ClientManager {
     }
 
     /// 列出某个用户的所有机器，附带 machine_id，用于踢出等操作。
-    pub async fn list_machines_with_ids(
-        &self,
-        user_id: UserIdInDb,
-    ) -> Vec<(uuid::Uuid, url::Url)> {
+    pub async fn list_machines_with_ids(&self, user_id: UserIdInDb) -> Vec<(uuid::Uuid, url::Url)> {
         self.storage.list_user_clients_with_machine_id(user_id)
     }
 

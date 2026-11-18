@@ -92,7 +92,11 @@ impl Backend {
             .as_secs() as i64;
         let expire_at = Some(now + 30 * 24 * 3600);
         self.db
-            .create_user_and_join_users_group(&new_user.credentials.username, hashed_password, expire_at)
+            .create_user_and_join_users_group(
+                &new_user.credentials.username,
+                hashed_password,
+                expire_at,
+            )
             .await?;
         Ok(())
     }
