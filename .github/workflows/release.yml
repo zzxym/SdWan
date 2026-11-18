@@ -15,6 +15,10 @@ on:
         description: 'The run id of SDWAN-Mobile Action in SDWAN repo'
         type: number
         required: true
+      ohos_run_id:
+        description: 'The run id of SDWAN-OHOS Action in SDWAN repo'
+        type: number
+        required: true
       version:
         description: 'Version for this release'
         type: string
@@ -61,6 +65,14 @@ jobs:
           repo: ${{ github.repository }}
           path: release_assets_nozip
 
+      - name: Download OHOS Artifact
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          run_id: ${{ inputs.ohos_run_id }}
+          repo: ${{ github.repository }}
+          path: release_assets_nozip
+
       - name: Zip release assets
         env:
           VERSION: ${{ inputs.version }}
@@ -68,6 +80,10 @@ jobs:
           mkdir zipped_assets
 
           find release_assets_nozip -type f -exec mv {} zipped_assets \;
+          # OHOS HAR 产物重命名为带版本号的文件名，与其他产物命名风格保持一致
+          if [ -f zipped_assets/sdwan-ohrs.har ]; then
+            mv zipped_assets/sdwan-ohrs.har zipped_assets/sdwan-ohos-${VERSION}.har
+          fi
           ls -l -R ./zipped_assets
 
           cd release_assets

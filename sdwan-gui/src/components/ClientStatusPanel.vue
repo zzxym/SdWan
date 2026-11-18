@@ -117,27 +117,27 @@ onUnmounted(() => {
         {{ t('client.status_title') }}
       </template>
       <template #content>
-        <div class="flex flex-col gap-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1">
-              <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_client') }}</span>
-              <span class="flex items-center gap-2 font-medium">
-                <i class="pi pi-circle-fill text-xs" :class="clientRunning ? 'text-green-500' : 'text-red-500'" />
-                {{ clientRunning ? t('client.status_running') : t('client.status_stopped') }}
-              </span>
-            </div>
-            <div class="flex flex-col gap-1">
-              <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_web_console') }}</span>
-              <span class="flex items-center gap-2 font-medium">
-                <i class="pi pi-circle-fill text-xs" :class="webConnected ? 'text-green-500' : 'text-orange-500'" />
-                {{ webConnected ? t('client.status_web_connected') : t('client.status_web_disconnected') }}
-              </span>
-              <span v-if="limitInfo" class="text-sm font-medium">
-                {{ t('client.status_authorization') }}：{{ limitInfo.online_client_count }}/{{ limitInfo.client_limit > 0 ? limitInfo.client_limit : '∞' }}
-              </span>
-            </div>
+        <div class="grid grid-cols-4 gap-4">
+          <div class="flex flex-col gap-1">
+            <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_client') }}</span>
+            <span class="flex items-center gap-2 font-medium">
+              <i class="pi pi-circle-fill text-xs" :class="clientRunning ? 'text-green-500' : 'text-red-500'" />
+              {{ clientRunning ? t('client.status_running') : t('client.status_stopped') }}
+            </span>
           </div>
-
+          <div class="flex flex-col gap-1">
+            <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_web_console') }}</span>
+            <span class="flex items-center gap-2 font-medium">
+              <i class="pi pi-circle-fill text-xs" :class="webConnected ? 'text-green-500' : 'text-orange-500'" />
+              {{ webConnected ? t('client.status_web_connected') : t('client.status_web_disconnected') }}
+            </span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_authorization') }}</span>
+            <span v-if="limitInfo" class="font-medium">
+              {{ limitInfo.online_client_count }}/{{ limitInfo.client_limit > 0 ? limitInfo.client_limit : '∞' }}
+            </span>
+          </div>
           <div class="flex flex-col gap-1">
             <span class="text-sm text-surface-500 dark:text-surface-400">{{ t('client.status_usage_period') }}</span>
             <span class="font-medium">{{ formatExpire(limitInfo?.expire_at) }}</span>
