@@ -79,7 +79,7 @@ jobs:
               cd $x;
               zip -r ../../zipped_assets/$x-${VERSION}.zip .;
               cd ..;
-            elif [ "$x" = "sdwan-web-binaries" ] || [ "$x" = "sdwan-web-dashboard" ]; then
+            elif [[ "$x" == sdwan-web-binaries-* ]] || [ "$x" = "sdwan-web-dashboard" ]; then
               continue
             else
               zip -r ../zipped_assets/$x-${VERSION}.zip $x;
@@ -91,20 +91,27 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           cd release_assets
-          if [ -d sdwan-web-binaries ]; then
-            (
-              cd sdwan-web-binaries
-              if [ -f sdwan-web ]; then
-                zip -r ../../zipped_assets/sdwan-web-${VERSION}.zip sdwan-web
-              fi
-              if [ -f sdwan-web-embed ]; then
-                zip -r ../../zipped_assets/sdwan-web-embed-${VERSION}.zip sdwan-web-embed
-              fi
-            )
-          fi
-          if [ -d sdwan-web-dashboard ]; then
-            (cd sdwan-web-dashboard && zip -r ../../zipped_assets/sdwan-web-dashboard-${VERSION}.zip .)
-          fi
+          for PLATFORM in linux-x86_64 windows-x86_64; do
+            DIR="sdwan-web-binaries-${PLATFORM}"
+            if [ -d "$DIR" ]; then
+              (
+                cd "$DIR"
+                SUFFIX=""
+                if [ "$PLATFORM" = "windows-x86_64" ]; then
+                  SUFFIX=".exe"
+                fi
+                if [ -f "sdwan-web${SUFFIX}" ]; then
+                  zip -r "../../zipped_assets/sdwan-web-${PLATFORM}-${VERSION}.zip" "sdwan-web${SUFFIX}"
+                fi
+                if [ -f "sdwan-web-embed${SUFFIX}" ]; then
+                  zip -r "../../zipped_assets/sdwan-web-embed-${PLATFORM}-${VERSION}.zip" "sdwan-web-embed${SUFFIX}"
+                fi
+              )
+            fi
+            if [ -d sdwan-web-dashboard ]; then
+              (cd sdwan-web-dashboard && zip -r "../../zipped_assets/sdwan-web-dashboard-${PLATFORM}-${VERSION}.zip" .)
+            fi
+          done
 
       - name: Write VERSION index
         env:

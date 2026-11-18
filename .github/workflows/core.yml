@@ -245,7 +245,7 @@ jobs:
 
               case "$(basename "$BIN")" in
                 sdwan-web"$SUFFIX"|sdwan-web-embed"$SUFFIX")
-                  if [[ "${{ matrix.ARTIFACT_NAME }}" == "linux-x86_64" ]]; then
+                  if [[ "${{ matrix.ARTIFACT_NAME }}" == "linux-x86_64" || "${{ matrix.ARTIFACT_NAME }}" == "windows-x86_64" ]]; then
                     mkdir -p ./web_artifacts
                     mv "$BIN" ./web_artifacts/
                   fi
@@ -268,10 +268,10 @@ jobs:
             ./artifacts/*
 
       - name: Archive web binaries
-        if: ${{ matrix.ARTIFACT_NAME == 'linux-x86_64' }}
+        if: ${{ matrix.ARTIFACT_NAME == 'linux-x86_64' || matrix.ARTIFACT_NAME == 'windows-x86_64' }}
         uses: actions/upload-artifact@v5
         with:
-          name: sdwan-web-binaries
+          name: sdwan-web-binaries-${{ matrix.ARTIFACT_NAME }}
           path: |
             ./web_artifacts/*
           if-no-files-found: error
