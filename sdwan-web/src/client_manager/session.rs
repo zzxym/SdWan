@@ -401,34 +401,41 @@ impl SessionRpcService {
             data.applied_config_revision = Some(webhook_config_revision);
         }
 
-        if data.req.replace(req.clone()).is_none() {
-            assert!(data.storage_token.is_none());
-
-            // 客户端数量限制校验：新机器注册时，若用户已达授权上限则拒绝。
-            if storage
-                .get_client_url_by_machine_id(user_id, &machine_id)
-                .is_none()
-            {
-                if let Some(user) = storage
-                    .db()
-                    .get_user_by_id(user_id)
-                    .await
-                    .map_err(|e| anyhow::anyhow!("DB error: {:?}", e))?
-                {
-                    if user.client_limit > 0 {
-                        let online_count = storage.list_user_clients(user_id).len();
-                        if online_count >= user.client_limit as usize {
-                            return Err(anyhow::anyhow!(
-                                "Client limit reached for user {:?}: {}/{}",
-                                user_id,
-                                online_count,
-                                user.client_limit
-                            )
-                            .into());
-                        }
-                    }
+        // 客户端数量限制校验：每次心跳都校验，这样在运营后台把某用户的授权数调低后，
+        // 已超限的在线客户端会在下一次心跳被拒绝并断开，而不是一直占用网络实例。
+        // 已登记客户端自身占一个名额（用 >），未登记的新客户端尚未计入（用 >=）。
+        // 注意：必须在 data.req.replace() 之前校验，避免超限返回 Err 时留下
+        // req 已设置但 storage_token 未设置的不一致状态。
+        if let Some(user) = storage
+            .db()
+            .get_user_by_id(user_id)
+            .await
+            .map_err(|e| anyhow::anyhow!("DB error: {:?}", e))?
+        {
+            if user.client_limit > 0 {
+                let is_registered = storage
+                    .get_client_url_by_machine_id(user_id, &machine_id)
+                    .is_some();
+                let online_count = storage.list_user_clients(user_id).len();
+                let exceeds = if is_registered {
+                    online_count > user.client_limit as usize
+                } else {
+                    online_count >= user.client_limit as usize
+                };
+                if exceeds {
+                    return Err(anyhow::anyhow!(
+                        "Client limit reached for user {:?}: {}/{}",
+                        user_id,
+                        online_count,
+                        user.client_limit
+                    )
+                    .into());
                 }
             }
+        }
+
+        if data.req.replace(req.clone()).is_none() {
+            assert!(data.storage_token.is_none());
 
             data.storage_token = Some(StorageToken {
                 token: req.user_token.clone(),

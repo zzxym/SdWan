@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useToast } from 'primevue/usetoast';
 import { Button, Column, DataTable, Dialog, InputText } from 'primevue';
 import { Md5 } from 'ts-md5';
+import { Utils } from 'sdwan-frontend-lib';
 import ApiClient, { type AdminUserItem } from '../modules/api';
 
 const { t } = useI18n();
@@ -204,8 +205,10 @@ async function loadUserNetworks() {
     networkLoading.value = true;
     try {
         const resp = await api.admin_list_user_networks(networkTarget.value.username, networkMachineId.value);
-        const running = (resp?.running_inst_ids ?? []).map((id: any) => String(id));
-        const disabled = (resp?.disabled_inst_ids ?? []).map((id: any) => String(id));
+        // 后端返回 protobuf Uuid {part1..4} 对象，需用 Utils.UuidToStr 转成标准 UUID 字符串，
+        // 否则 String(id) 会得到 [object Object]，且后续启停/删除接口无法识别。
+        const running = (resp?.running_inst_ids ?? []).map((id: any) => Utils.UuidToStr(id));
+        const disabled = (resp?.disabled_inst_ids ?? []).map((id: any) => Utils.UuidToStr(id));
         networkInstances.value = [
             ...running.map((id) => ({ id, running: true })),
             ...disabled.map((id) => ({ id, running: false })),
