@@ -118,6 +118,12 @@ impl Session {
                     }
                     Ok(resp) => {
                         tracing::debug!("heartbeat response: {:?}", resp);
+                        let disallowed = resp.network_run_disallowed;
+                        if controller.set_network_run_allowed(!disallowed) && disallowed {
+                            if let Err(e) = controller.stop_all_network_instances() {
+                                tracing::warn!("failed to stop network instances over limit: {:?}", e);
+                            }
+                        }
                         let _ = ctx_clone.notifier.send(resp);
                         ctx_clone.resp.lock().await.replace(resp);
                     }

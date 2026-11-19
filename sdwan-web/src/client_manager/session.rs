@@ -25,9 +25,20 @@ use tokio_util::task::AbortOnDropHandle;
 
 use super::storage::{Storage, StorageToken, WeakRefStorage};
 use crate::FeatureFlags;
+use crate::db::UserIdInDb;
 use crate::webhook::SharedWebhookConfig;
 
 const LEGACY_NETWORK_CONFIG_SOURCE: &str = "legacy";
+
+fn is_network_run_disallowed(
+    storage: &Storage,
+    user_id: UserIdInDb,
+    machine_id: uuid::Uuid,
+    client_limit: i32,
+) -> bool {
+    client_limit > 0
+        && storage.count_running_network_clients(user_id, Some(machine_id)) >= client_limit as usize
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum PersistedConfigSource {
@@ -299,6 +310,7 @@ impl SessionRpcService {
                 client_limit: 0,
                 online_client_count: 0,
                 expire_at: 0,
+                network_run_disallowed: false,
             });
         };
 
@@ -401,38 +413,20 @@ impl SessionRpcService {
             data.applied_config_revision = Some(webhook_config_revision);
         }
 
-        // 客户端数量限制校验：每次心跳都校验，这样在运营后台把某用户的授权数调低后，
-        // 已超限的在线客户端会在下一次心跳被拒绝并断开，而不是一直占用网络实例。
-        // 已登记客户端自身占一个名额（用 >），未登记的新客户端尚未计入（用 >=）。
-        // 注意：必须在 data.req.replace() 之前校验，避免超限返回 Err 时留下
-        // req 已设置但 storage_token 未设置的不一致状态。
-        if let Some(user) = storage
+        // 授权语义：不限制登录/在线设备数，只限制同时运行网络的不同设备数。
+        // 当前设备自身不占比较名额，因此同一台设备可以运行多个网络实例。
+        let (client_limit, expire_at) = match storage
             .db()
             .get_user_by_id(user_id)
             .await
             .map_err(|e| anyhow::anyhow!("DB error: {:?}", e))?
         {
-            if user.client_limit > 0 {
-                let is_registered = storage
-                    .get_client_url_by_machine_id(user_id, &machine_id)
-                    .is_some();
-                let online_count = storage.list_user_clients(user_id).len();
-                let exceeds = if is_registered {
-                    online_count > user.client_limit as usize
-                } else {
-                    online_count >= user.client_limit as usize
-                };
-                if exceeds {
-                    return Err(anyhow::anyhow!(
-                        "Client limit reached for user {:?}: {}/{}",
-                        user_id,
-                        online_count,
-                        user.client_limit
-                    )
-                    .into());
-                }
-            }
-        }
+            Some(user) => (user.client_limit, user.expire_at.unwrap_or(0)),
+            None => (0, 0),
+        };
+        let wants_to_run_network = !req.running_network_instances.is_empty();
+        let network_run_disallowed =
+            wants_to_run_network && is_network_run_disallowed(&storage, user_id, machine_id, client_limit);
 
         if data.req.replace(req.clone()).is_none() {
             assert!(data.storage_token.is_none());
@@ -472,28 +466,26 @@ impl SessionRpcService {
                 client_limit: 0,
                 online_client_count: 0,
                 expire_at: 0,
+                network_run_disallowed: false,
             });
         };
-        storage.update_client(
+        storage.update_client_with_running_network(
             data.storage_token.as_ref().unwrap().clone(),
             report_time.timestamp(),
+            wants_to_run_network,
         );
 
         let _ = data.notifier.send(req);
 
-        // 下发用户的授权与使用期限信息，供客户端状态面板展示（在线数/总授权数、使用期限）。
-        // 在线数来自 storage 中真实登记的客户端，即使读取用户详情失败也应返回真实在线数，
-        // 避免客户端面板误显示为 0。
+        // 下发用户的授权与使用期限信息，以及运行网络是否被授权拦截。
+        // 在线数来自 storage 中真实登记的客户端，仅用于面板展示，不再作为登录限制。
         let online_client_count = storage.list_user_clients(user_id).len() as i32;
-        let (client_limit, expire_at) = match storage.db().get_user_by_id(user_id).await {
-            Ok(Some(user)) => (user.client_limit, user.expire_at.unwrap_or(0)),
-            _ => (0, 0),
-        };
 
         Ok(HeartbeatResponse {
             client_limit,
             online_client_count,
             expire_at,
+            network_run_disallowed,
         })
     }
 }
@@ -753,6 +745,25 @@ impl Session {
                     return;
                 }
             };
+
+            let machine_uuid: uuid::Uuid = machine_id.into();
+            let storage_handle = Storage::from(storage.clone());
+            let client_limit = match storage.db.get_user_by_id(user_id).await {
+                Ok(Some(user)) => user.client_limit,
+                Ok(None) => 0,
+                Err(e) => {
+                    tracing::error!("Failed to get user by id, error: {:?}", e);
+                    return;
+                }
+            };
+            if is_network_run_disallowed(&storage_handle, user_id, machine_uuid, client_limit) {
+                tracing::warn!(
+                    ?user_id,
+                    ?machine_id,
+                    "Skip auto-run networks because running network device limit is reached"
+                );
+                continue;
+            }
 
             let local_configs = match storage
                 .db

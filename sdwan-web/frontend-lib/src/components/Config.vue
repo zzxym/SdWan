@@ -26,6 +26,8 @@ const props = defineProps<{
   hideAdvancedSettings?: boolean
   // SDWAN: 编辑网络时强制写回的预置高级参数
   forcedAdvancedSettings?: Partial<NetworkConfig>
+  // SDWAN: Web 控制台简化模式，仅保留 Subnet Proxy CIDRs 和 Run Network
+  webConsoleMode?: boolean
 }>()
 
 defineEmits(['runNetwork'])
@@ -190,54 +192,58 @@ watch(() => curNetwork.value, syncNormalizedNetwork, { immediate: true, deep: fa
         <div class="w-full self-center ">
           <Panel :header="t('basic_settings')">
             <div class="flex flex-col gap-y-2">
-              <div class="flex flex-row gap-x-9 flex-wrap">
-                <div class="flex flex-col gap-2 basis-5/12 grow">
-                  <div class="flex items-center" for="virtual_ip">
-                    <label class="mr-2"> {{ t('virtual_ipv4') }} </label>
-                    <Checkbox v-model="curNetwork.dhcp" input-id="virtual_ip_auto" :binary="true" />
+              <template v-if="!props.webConsoleMode">
+                <div class="flex flex-row gap-x-9 flex-wrap">
+                  <div class="flex flex-col gap-2 basis-5/12 grow">
+                    <div class="flex items-center" for="virtual_ip">
+                      <label class="mr-2"> {{ t('virtual_ipv4') }} </label>
+                      <Checkbox v-model="curNetwork.dhcp" input-id="virtual_ip_auto" :binary="true" />
 
-                    <label for="virtual_ip_auto" class="ml-2">
-                      {{ t('virtual_ipv4_dhcp') }}
-                    </label>
-                  </div>
-                  <InputGroup>
-                    <InputText id="virtual_ip" v-model="curNetwork.virtual_ipv4" :disabled="curNetwork.dhcp"
-                      aria-describedby="virtual_ipv4-help" />
-                    <InputGroupAddon>
-                      <span>/</span>
-                    </InputGroupAddon>
-                    <InputNumber v-model="curNetwork.network_length" :disabled="curNetwork.dhcp"
-                      inputId="horizontal-buttons" showButtons :step="1" mode="decimal" :min="1" :max="32" fluid
-                      class="max-w-20" />
-                  </InputGroup>
-                </div>
-              </div>
-
-              <div class="flex flex-row gap-x-9 flex-wrap">
-                <div class="flex flex-col gap-2 basis-5/12 grow">
-                  <label for="network_name">{{ t('network_name') }}</label>
-                  <InputText id="network_name" v-model="curNetwork.network_name" aria-describedby="network_name-help" />
-                </div>
-                <div class="flex flex-col gap-2 basis-5/12 grow">
-                  <label for="network_secret">{{ t('network_secret') }}</label>
-                  <Password id="network_secret" v-model="curNetwork.network_secret"
-                    aria-describedby="network_secret-help" toggleMask :feedback="false" />
-                </div>
-              </div>
-
-              <div v-if="!props.hideInitialNodes" class="flex flex-row gap-x-9 flex-wrap">
-                <div class="flex flex-col gap-2 basis-5/12 grow">
-                  <div class="flex items-center">
-                    <label for="initial_nodes">{{ t('initial_nodes') }}</label>
-                    <span class="pi pi-question-circle ml-2 self-center" v-tooltip="t('initial_nodes_help')"></span>
-                  </div>
-                  <div class="items-center flex flex-col p-fluid gap-y-2">
-                    <UrlListInput id="initial_nodes" v-model="curNetwork.peer_urls" :protos="protos"
-                      defaultUrl="tcp://:10010" :add-label="t('add_initial_node')"
-                      :placeholder="t('initial_node_placeholder')" />
+                      <label for="virtual_ip_auto" class="ml-2">
+                        {{ t('virtual_ipv4_dhcp') }}
+                      </label>
+                    </div>
+                    <InputGroup>
+                      <InputText id="virtual_ip" v-model="curNetwork.virtual_ipv4" :disabled="curNetwork.dhcp"
+                        aria-describedby="virtual_ipv4-help" />
+                      <InputGroupAddon>
+                        <span>/</span>
+                      </InputGroupAddon>
+                      <InputNumber v-model="curNetwork.network_length" :disabled="curNetwork.dhcp"
+                        inputId="horizontal-buttons" showButtons :step="1" mode="decimal" :min="1" :max="32" fluid
+                        class="max-w-20" />
+                    </InputGroup>
                   </div>
                 </div>
-              </div>
+
+                <div class="flex flex-row gap-x-9 flex-wrap">
+                  <div class="flex flex-col gap-2 basis-5/12 grow">
+                    <label for="network_name">{{ t('network_name') }}</label>
+                    <InputText id="network_name" v-model="curNetwork.network_name"
+                      aria-describedby="network_name-help" />
+                  </div>
+                  <div class="flex flex-col gap-2 basis-5/12 grow">
+                    <label for="network_secret">{{ t('network_secret') }}</label>
+                    <Password id="network_secret" v-model="curNetwork.network_secret"
+                      aria-describedby="network_secret-help" toggleMask :feedback="false" />
+                  </div>
+                </div>
+
+                <div v-if="!props.hideInitialNodes" class="flex flex-row gap-x-9 flex-wrap">
+                  <div class="flex flex-col gap-2 basis-5/12 grow">
+                    <div class="flex items-center">
+                      <label for="initial_nodes">{{ t('initial_nodes') }}</label>
+                      <span class="pi pi-question-circle ml-2 self-center"
+                        v-tooltip="t('initial_nodes_help')"></span>
+                    </div>
+                    <div class="items-center flex flex-col p-fluid gap-y-2">
+                      <UrlListInput id="initial_nodes" v-model="curNetwork.peer_urls" :protos="protos"
+                        defaultUrl="tcp://:10010" :add-label="t('add_initial_node')"
+                        :placeholder="t('initial_node_placeholder')" />
+                    </div>
+                  </div>
+                </div>
+              </template>
 
               <div class="flex flex-row gap-x-9 flex-wrap w-full">
                 <div class="flex flex-col gap-2 grow p-fluid">
@@ -250,7 +256,7 @@ watch(() => curNetwork.value, syncNormalizedNetwork, { immediate: true, deep: fa
             </div>
           </Panel>
 
-          <template v-if="!props.hideAdvancedSettings">
+          <template v-if="!props.hideAdvancedSettings && !props.webConsoleMode">
           <Divider />
 
           <Panel :header="t('advanced_settings')" toggleable collapsed>
@@ -425,6 +431,7 @@ watch(() => curNetwork.value, syncNormalizedNetwork, { immediate: true, deep: fa
           </Panel>
           </template>
 
+          <template v-if="!props.webConsoleMode">
           <Divider />
 
           <Panel :header="t('port_forwards')" toggleable collapsed>
@@ -513,8 +520,9 @@ watch(() => curNetwork.value, syncNormalizedNetwork, { immediate: true, deep: fa
               </div>
             </div>
           </Panel>
+          </template>
 
-          <template v-if="!props.hideAdvancedSettings">
+          <template v-if="!props.hideAdvancedSettings && !props.webConsoleMode">
           <Divider />
 
           <Panel :header="t('acl.title')" toggleable collapsed>

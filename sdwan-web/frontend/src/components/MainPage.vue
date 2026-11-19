@@ -7,7 +7,7 @@ import { useDialog } from 'primevue/usedialog';
 import ChangePassword from './ChangePassword.vue';
 import Icon from '../assets/sdwan.png'
 import { useI18n } from 'vue-i18n'
-import ApiClient from '../modules/api';
+import ApiClient, { clearNetworkCredentials } from '../modules/api';
 
 const { t } = useI18n()
 const route = useRoute();
@@ -68,6 +68,7 @@ const userMenuItems = computed(() => {
             } catch (e) {
                 console.error("logout failed", e);
             }
+            clearNetworkCredentials();
             router.push({ name: 'login' });
         },
     });

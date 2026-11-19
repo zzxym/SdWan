@@ -17,6 +17,7 @@ pub struct StorageToken {
 struct ClientInfo {
     storage_token: StorageToken,
     report_time: i64,
+    running_network: bool,
 }
 
 #[derive(Debug)]
@@ -34,6 +35,12 @@ impl TryFrom<WeakRefStorage> for Storage {
 
     fn try_from(weak: Weak<StorageInner>) -> Result<Self, Self::Error> {
         weak.upgrade().map(Storage).ok_or(())
+    }
+}
+
+impl From<Arc<StorageInner>> for Storage {
+    fn from(inner: Arc<StorageInner>) -> Self {
+        Storage(inner)
     }
 }
 
@@ -67,13 +74,43 @@ impl Storage {
     }
 
     pub fn update_client(&self, stoken: StorageToken, report_time: i64) {
+        self.update_client_with_running_network(stoken, report_time, false);
+    }
+
+    pub fn update_client_with_running_network(
+        &self,
+        stoken: StorageToken,
+        report_time: i64,
+        running_network: bool,
+    ) {
         let inner = self.0.user_clients_map.entry(stoken.user_id).or_default();
 
         let client_info = ClientInfo {
             storage_token: stoken.clone(),
             report_time,
+            running_network,
         };
         Self::update_client_info_map(&inner, &client_info);
+    }
+
+    /// 统计某用户当前运行网络的不同设备数，可排除指定设备（通常是提交心跳的设备自身）。
+    pub fn count_running_network_clients(
+        &self,
+        user_id: UserIdInDb,
+        exclude_machine_id: Option<uuid::Uuid>,
+    ) -> usize {
+        self.0
+            .user_clients_map
+            .get(&user_id)
+            .map(|info_map| {
+                info_map
+                    .iter()
+                    .filter(|entry| {
+                        Some(*entry.key()) != exclude_machine_id && entry.value().running_network
+                    })
+                    .count()
+            })
+            .unwrap_or(0)
     }
 
     pub fn remove_client(&self, stoken: &StorageToken) {
@@ -195,5 +232,39 @@ mod tests {
         storage.remove_client(&user2_token);
 
         assert_eq!(storage.get_client_url_by_machine_id(2, &machine_id), None);
+    }
+
+    #[tokio::test]
+    async fn count_running_network_clients_excludes_selected_machine() {
+        let storage = Storage::new(Db::memory_db().await);
+        let running_machine = uuid::Uuid::new_v4();
+        let idle_machine = uuid::Uuid::new_v4();
+        let candidate_machine = uuid::Uuid::new_v4();
+
+        storage.update_client_with_running_network(
+            make_storage_token(1, running_machine, "tcp://127.0.0.1:2001"),
+            10,
+            true,
+        );
+        storage.update_client_with_running_network(
+            make_storage_token(1, idle_machine, "tcp://127.0.0.1:2002"),
+            10,
+            false,
+        );
+        storage.update_client_with_running_network(
+            make_storage_token(1, candidate_machine, "tcp://127.0.0.1:2003"),
+            10,
+            false,
+        );
+
+        assert_eq!(storage.count_running_network_clients(1, None), 1);
+        assert_eq!(
+            storage.count_running_network_clients(1, Some(candidate_machine)),
+            1
+        );
+        assert_eq!(
+            storage.count_running_network_clients(1, Some(running_machine)),
+            0
+        );
     }
 }

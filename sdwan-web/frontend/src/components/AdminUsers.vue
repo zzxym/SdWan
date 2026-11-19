@@ -7,7 +7,7 @@ import { Button, Column, DataTable, Dialog, InputText, TieredMenu } from 'primev
 import { Md5 } from 'ts-md5';
 import { I18nUtils, Utils } from 'sdwan-frontend-lib';
 import Icon from '../assets/sdwan.png';
-import ApiClient, { type AdminUserItem } from '../modules/api';
+import ApiClient, { clearNetworkCredentials, type AdminUserItem } from '../modules/api';
 
 const { t } = useI18n();
 const toast = useToast();
@@ -66,6 +66,7 @@ const userMenuItems = computed(() => [
             } catch (e) {
                 console.error('logout failed', e);
             }
+            clearNetworkCredentials();
             router.push({ name: 'login' });
         },
     },

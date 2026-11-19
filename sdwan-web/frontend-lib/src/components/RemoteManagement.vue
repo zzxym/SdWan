@@ -21,6 +21,8 @@ const props = defineProps<{
     hideAdvancedSettings?: boolean;
     // SDWAN: 编辑网络时强制写回的预置高级参数
     forcedAdvancedSettings?: Partial<NetworkTypes.NetworkConfig>;
+    // SDWAN: Web 控制台简化模式：隐藏网络选择、导入导出保存及高级配置项
+    webConsoleMode?: boolean;
 }>();
 
 const instanceId = defineModel('instanceId', {
@@ -241,7 +243,11 @@ const saveAndRunNewNetwork = async (config?: NetworkTypes.NetworkConfig) => {
         await loadCurrentNetworkInfo();
     } catch (e: any) {
         console.error(e);
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to run network, error: ' + JSON.stringify(e.response?.data ?? e), life: 2000 });
+        const status = e.response?.status;
+        const detail = status === 403
+            ? t('web.device_management.network_limit_reached')
+            : `${t('web.device_management.run_network_failed')}: ${e.response?.data?.message ?? JSON.stringify(e.response?.data ?? e)}`;
+        toast.add({ severity: 'error', summary: t('web.device_management.run_network_failed'), detail, life: 3000 });
         return;
     }
 
@@ -438,8 +444,29 @@ let periodFunc = new Utils.PeriodicTask(async () => {
     }
 }, 1000);
 
+const ensureWebConsoleNetwork = async () => {
+    if (!props.webConsoleMode || instanceId.value) {
+        return;
+    }
+
+    try {
+        const ret = await props.api.list_network_instance_ids();
+        listInstanceIdResponse.value = ret;
+        const existingIds = [...ret.running_inst_ids, ...ret.disabled_inst_ids].map(Utils.UuidToStr);
+        if (existingIds.length > 0) {
+            instanceId.value = existingIds[0];
+            await loadCurrentNetworkConfig();
+        } else {
+            await newNetwork();
+        }
+    } catch (e) {
+        console.error('Failed to initialize web console network', e);
+    }
+};
+
 onMounted(async () => {
     periodFunc.start();
+    await ensureWebConsoleNetwork();
 
     // 添加屏幕尺寸监听
     window.addEventListener('resize', updateScreenWidth);
@@ -461,7 +488,7 @@ onUnmounted(() => {
         <ConfirmPopup></ConfirmPopup>
 
         <!-- 网络选择和操作按钮始终在同一行 -->
-        <div class="network-header bg-surface-50 p-3 rounded-lg shadow-sm mb-1">
+        <div v-if="!props.webConsoleMode" class="network-header bg-surface-50 p-3 rounded-lg shadow-sm mb-1">
             <div class="flex flex-row justify-between items-center gap-2" style="align-items: center;">
                 <!-- 网络选择 -->
                 <div class="flex-1 min-w-0">
@@ -554,7 +581,7 @@ onUnmounted(() => {
                     <h2 class="text-xl font-medium">{{ t('web.device_management.edit_network') }}</h2>
                 </div>
 
-                <div class="w-full flex gap-2 flex-wrap justify-start mb-3">
+                <div v-if="!props.webConsoleMode" class="w-full flex gap-2 flex-wrap justify-start mb-3">
                     <Button @click="showConfigEditDialog = true" icon="pi pi-file-edit"
                         :label="t('web.device_management.edit_as_file')" iconPos="left" severity="secondary" />
                     <Button @click="importConfig" icon="pi pi-upload" :label="t('web.device_management.import_config')"
@@ -564,12 +591,12 @@ onUnmounted(() => {
                         severity="success" />
                 </div>
 
-                <Divider />
+                <Divider v-if="!props.webConsoleMode" />
 
                 <Config :cur-network="currentNetworkConfig" :config-invalid="!currentNetworkConfig"
                     :hide-initial-nodes="props.hideInitialNodes" :forced-peer-urls="props.forcedPeerUrls"
                     :hide-advanced-settings="props.hideAdvancedSettings"
-                    :forced-advanced-settings="props.forcedAdvancedSettings"
+                    :forced-advanced-settings="props.forcedAdvancedSettings" :web-console-mode="props.webConsoleMode"
                     @run-network="saveAndRunNewNetwork"></Config>
             </div>
 
@@ -581,7 +608,7 @@ onUnmounted(() => {
                 </div>
 
                 <Status v-if="(curNetworkInfo?.error_msg ?? '') === ''" v-bind:cur-network-inst="curNetworkInfo"
-                    class="mb-4">
+                    :compact="props.webConsoleMode" class="mb-4">
                 </Status>
                 <Message v-else severity="error" class="mb-4">{{ curNetworkInfo?.error_msg }}</Message>
 
@@ -600,8 +627,8 @@ onUnmounted(() => {
                 <p class="text-secondary text-center mb-6 max-w-md">
                     {{ t('web.device_management.select_existing_network_or_create_new') }}
                 </p>
-                <Button @click="newNetwork" :label="t('web.device_management.create_network')" icon="pi pi-plus"
-                    iconPos="left" />
+                <Button v-if="!props.webConsoleMode" @click="newNetwork"
+                    :label="t('web.device_management.create_network')" icon="pi pi-plus" iconPos="left" />
             </div>
         </div>
 

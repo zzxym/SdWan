@@ -202,6 +202,27 @@ impl ClientManager {
         self.storage.list_user_clients_with_machine_id(user_id)
     }
 
+    /// 控制台下发运行网络前检查授权数。
+    /// 授权数限制的是同时运行网络的不同设备数，当前设备自身不计入比较。
+    pub async fn check_network_run_allowed(
+        &self,
+        user_id: UserIdInDb,
+        machine_id: uuid::Uuid,
+    ) -> anyhow::Result<()> {
+        let Some(user) = self.storage.db().get_user_by_id(user_id).await? else {
+            return Ok(());
+        };
+        if user.client_limit > 0
+            && self
+                .storage
+                .count_running_network_clients(user_id, Some(machine_id))
+                >= user.client_limit as usize
+        {
+            anyhow::bail!("超过授权数，无法运行网络");
+        }
+        Ok(())
+    }
+
     pub async fn get_heartbeat_requests(&self, client_url: &url::Url) -> Option<HeartbeatRequest> {
         let s = self.client_sessions.get(client_url)?.clone();
         s.data().read().await.req()

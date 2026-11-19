@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, inject, ref } from 'vue';
 import { Card, Password, Button } from 'primevue';
-import ApiClient from '../modules/api';
+import ApiClient, { updateNetworkPassword } from '../modules/api';
 
 const dialogRef = inject<any>('dialogRef');
 
@@ -11,6 +11,7 @@ const password = ref('');
 
 const changePassword = async () => {
     await api.value.change_password(password.value);
+    updateNetworkPassword(password.value);
     dialogRef.value.close();
 }
 </script>

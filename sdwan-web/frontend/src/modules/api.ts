@@ -68,6 +68,56 @@ export interface CurrentUser {
     is_admin: boolean;
 }
 
+export interface NetworkCredentials {
+    username: string;
+    password: string;
+}
+
+const NETWORK_CREDENTIALS_KEY = 'web.networkCredentials';
+
+/** 暂存登录凭据，供 Web 控制台生成固定网络名称和密码。 */
+export function saveNetworkCredentials(username: string, password: string): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    sessionStorage.setItem(NETWORK_CREDENTIALS_KEY, JSON.stringify({ username, password }));
+}
+
+/** 读取当前登录会话暂存的网络凭据。 */
+export function getNetworkCredentials(): NetworkCredentials | undefined {
+    if (typeof window === 'undefined') {
+        return undefined;
+    }
+    const raw = sessionStorage.getItem(NETWORK_CREDENTIALS_KEY);
+    if (!raw) {
+        return undefined;
+    }
+    try {
+        const parsed = JSON.parse(raw) as Partial<NetworkCredentials>;
+        if (typeof parsed.username === 'string' && typeof parsed.password === 'string') {
+            return { username: parsed.username, password: parsed.password };
+        }
+    } catch (_) {
+        // ignore malformed credentials
+    }
+    return undefined;
+}
+
+/** 修改密码后同步更新暂存的网络密码。 */
+export function updateNetworkPassword(password: string): void {
+    const current = getNetworkCredentials();
+    if (current) {
+        saveNetworkCredentials(current.username, password);
+    }
+}
+
+/** 退出登录时清除暂存凭据。 */
+export function clearNetworkCredentials(): void {
+    if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(NETWORK_CREDENTIALS_KEY);
+    }
+}
+
 export interface ListNetworkInstanceIdResponse {
     running_inst_ids: Array<Utils.UUID>,
     disabled_inst_ids: Array<Utils.UUID>,

@@ -28,6 +28,8 @@ message HeartbeatResponse {
   int32 client_limit = 1;
   int32 online_client_count = 2;
   int64 expire_at = 3;
+  // true 表示该设备运行网络已超过授权数，客户端需要停止本地网络实例。
+  bool network_run_disallowed = 4;
 }
 
 message GetFeatureRequest {}

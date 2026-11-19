@@ -464,6 +464,10 @@ impl AdminApi {
         let target_id = Self::find_user_id(&backend, &username).await?;
 
         client_mgr
+            .check_network_run_allowed(target_id, machine_id)
+            .await
+            .map_err(|e| (StatusCode::FORBIDDEN, other_error(e.to_string()).into()))?;
+        client_mgr
             .handle_run_network_instance((target_id, machine_id), payload.config, payload.save)
             .await
             .map_err(convert_error)?;
@@ -529,6 +533,12 @@ impl AdminApi {
         let backend = auth_session.backend.clone();
         let target_id = Self::find_user_id(&backend, &username).await?;
 
+        if !payload.disabled {
+            client_mgr
+                .check_network_run_allowed(target_id, machine_id)
+                .await
+                .map_err(|e| (StatusCode::FORBIDDEN, other_error(e.to_string()).into()))?;
+        }
         client_mgr
             .handle_update_network_state((target_id, machine_id), inst_id, payload.disabled)
             .await

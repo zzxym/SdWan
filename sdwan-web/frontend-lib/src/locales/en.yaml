@@ -349,6 +349,8 @@ web:
     no_network_selected: No Network Selected
     select_existing_network_or_create_new: Select an existing network instance or create a new one to manage network settings
     disable_network: Disable Network
+    run_network_failed: Failed to run network
+    network_limit_reached: Network authorization limit reached, cannot run network
 
   network:
     title: Network
@@ -397,9 +399,9 @@ web:
     enable: Enable account
     disable: Disable account
     set_expire: Set expiration
-    set_client_limit: Set client limit
-    client_limit: Authorized clients
-    client_limit_hint: Enter 0 for no limit; N means the user can have at most N clients online at once.
+    set_client_limit: Set network device limit
+    client_limit: Authorized network devices
+    client_limit_hint: Enter 0 for no limit; N means at most N devices of this user can run networks at once. Login and online device count are not limited.
     reset_password: Reset password
     manage_networks: Manage networks
     kick_client: Kick client

@@ -1,6 +1,13 @@
 use dashmap::DashMap;
 use std::fmt::{Display, Formatter};
-use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    path::PathBuf,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+};
 use tokio_util::task::AbortOnDropHandle;
 
 use crate::{
@@ -32,6 +39,7 @@ pub struct NetworkInstanceManager {
     instance_error_messages: Arc<DashMap<uuid::Uuid, String>>,
     config_dir: Option<PathBuf>,
     guard_counter: Arc<()>,
+    network_run_allowed: Arc<AtomicBool>,
 }
 
 impl Default for NetworkInstanceManager {
@@ -49,12 +57,32 @@ impl NetworkInstanceManager {
             instance_error_messages: Arc::new(DashMap::new()),
             config_dir: None,
             guard_counter: Arc::new(()),
+            // 非 Web 客户端场景没有心跳授权信息，默认允许运行。
+            network_run_allowed: Arc::new(AtomicBool::new(true)),
         }
     }
 
     pub fn with_config_path(mut self, config_dir: Option<PathBuf>) -> Self {
         self.config_dir = config_dir;
         self
+    }
+
+    /// 更新心跳下发的运行授权状态，返回是否发生了状态变化。
+    pub fn set_network_run_allowed(&self, allowed: bool) -> bool {
+        self.network_run_allowed.swap(allowed, Ordering::AcqRel) != allowed
+    }
+
+    pub fn network_run_allowed(&self) -> bool {
+        self.network_run_allowed.load(Ordering::Acquire)
+    }
+
+    /// 超限时停止全部本地网络实例，但不删除持久化配置。
+    pub fn stop_all_network_instances(&self) -> Result<(), anyhow::Error> {
+        let ids = self.list_network_instance_ids();
+        if !ids.is_empty() {
+            self.delete_network_instance(ids)?;
+        }
+        Ok(())
     }
 
     fn start_instance_task(&self, instance_id: uuid::Uuid) -> Result<(), anyhow::Error> {
@@ -105,6 +133,10 @@ impl NetworkInstanceManager {
         watch_event: bool,
         config_file_control: ConfigFileControl,
     ) -> Result<uuid::Uuid, anyhow::Error> {
+        if !self.network_run_allowed() {
+            anyhow::bail!("超过授权数，无法运行网络");
+        }
+
         let instance_id = cfg.get_id();
         if self.instance_map.contains_key(&instance_id) {
             anyhow::bail!("instance {} already exists", instance_id);

@@ -39,6 +39,14 @@ impl Controller {
         self.manager.list_network_instance_ids()
     }
 
+    pub fn set_network_run_allowed(&self, allowed: bool) -> bool {
+        self.manager.set_network_run_allowed(allowed)
+    }
+
+    pub fn stop_all_network_instances(&self) -> anyhow::Result<()> {
+        self.manager.stop_all_network_instances()
+    }
+
     pub fn token(&self) -> String {
         self.token.clone()
     }

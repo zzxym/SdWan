@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Utils, Api, RemoteManagement, createDefaultSdwanNetworkConfig } from 'sdwan-frontend-lib';
+import { Utils, Api, RemoteManagement, createDefaultSdwanNetworkConfig, SDWAN_PEER_URLS, sdwanPresetAdvancedSettings } from 'sdwan-frontend-lib';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import ApiClient from '../modules/api';
+import ApiClient, { getNetworkCredentials } from '../modules/api';
 
 
 const props = defineProps<{
@@ -39,10 +39,17 @@ const selectedInstanceId = computed({
 
 const remoteClient = computed<Api.RemoteClient>(() => props.api.get_remote_client(deviceId.value));
 
-// 新建网络配置时带入 SDWAN 预置的服务器节点与默认信息（与 GUI 一致）
+const presetAdvancedSettings = sdwanPresetAdvancedSettings();
+
+// Web 控制台新建网络时，网络名称/密码固定使用当前登录凭据
 const newConfigGenerator = () => {
     const config = createDefaultSdwanNetworkConfig();
+    const credentials = getNetworkCredentials();
     config.hostname = deviceInfo.value?.hostname;
+    config.network_name = credentials?.username ?? '';
+    config.network_secret = credentials?.password ?? '';
+    config.peer_urls = [...SDWAN_PEER_URLS];
+    Object.assign(config, presetAdvancedSettings);
     return config;
 }
 
@@ -50,7 +57,8 @@ const newConfigGenerator = () => {
 
 <template>
     <RemoteManagement :api="remoteClient" v-model:instance-id="selectedInstanceId"
-        :new-config-generator="newConfigGenerator" />
+        :new-config-generator="newConfigGenerator" :hide-initial-nodes="true" :forced-peer-urls="SDWAN_PEER_URLS"
+        :hide-advanced-settings="true" :forced-advanced-settings="presetAdvancedSettings" :web-console-mode="true" />
 </template>
 
 <style scoped>

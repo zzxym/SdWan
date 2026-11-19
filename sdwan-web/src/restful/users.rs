@@ -323,7 +323,7 @@ mod tests {
     use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
     use super::*;
-    use crate::db::entity::{groups, users, users_groups};
+    use crate::db::entity::{groups, users};
 
     /// 迁移应当：创建默认管理员 xlxxadmin、禁用内置 admin 账号。
     #[tokio::test]
@@ -420,6 +420,7 @@ mod tests {
             password: "p".to_string(),
             enabled: true,
             expire_at: None,
+            client_limit: 2,
         };
         assert!(user.is_usable());
 

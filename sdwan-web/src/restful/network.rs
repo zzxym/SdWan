@@ -129,12 +129,13 @@ impl NetworkApi {
         Path(machine_id): Path<uuid::Uuid>,
         Json(payload): Json<RunNetworkJsonReq>,
     ) -> Result<Json<Void>, HttpHandleError> {
+        let user_id = Self::get_user_id(&auth_session)?;
         client_mgr
-            .handle_run_network_instance(
-                (Self::get_user_id(&auth_session)?, machine_id),
-                payload.config,
-                payload.save,
-            )
+            .check_network_run_allowed(user_id, machine_id)
+            .await
+            .map_err(|e| (StatusCode::FORBIDDEN, other_error(e.to_string()).into()))?;
+        client_mgr
+            .handle_run_network_instance((user_id, machine_id), payload.config, payload.save)
             .await
             .map_err(convert_error)?;
         Ok(Void::default().into())
@@ -234,12 +235,15 @@ impl NetworkApi {
             ));
         };
 
+        let user_id = Self::get_user_id(&auth_session)?;
+        if !payload.disabled {
+            client_mgr
+                .check_network_run_allowed(user_id, machine_id)
+                .await
+                .map_err(|e| (StatusCode::FORBIDDEN, other_error(e.to_string()).into()))?;
+        }
         client_mgr
-            .handle_update_network_state(
-                (auth_session.user.unwrap().id(), machine_id),
-                inst_id,
-                payload.disabled,
-            )
+            .handle_update_network_state((user_id, machine_id), inst_id, payload.disabled)
             .await
             .map_err(convert_error)
     }
@@ -302,6 +306,10 @@ impl NetworkApi {
         Path((user_id, machine_id)): Path<(UserIdInDb, uuid::Uuid)>,
         Json(payload): Json<RunNetworkJsonReq>,
     ) -> Result<Json<Void>, HttpHandleError> {
+        client_mgr
+            .check_network_run_allowed(user_id, machine_id)
+            .await
+            .map_err(|e| (StatusCode::FORBIDDEN, other_error(e.to_string()).into()))?;
         client_mgr
             .handle_run_network_instance((user_id, machine_id), payload.config, payload.save)
             .await

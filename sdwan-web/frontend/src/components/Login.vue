@@ -6,7 +6,7 @@ import { useToast } from 'primevue/usetoast';
 import { I18nUtils } from 'sdwan-frontend-lib';
 import { getInitialApiHost, cleanAndLoadApiHosts, saveApiHost } from "../modules/api-host"
 import { useI18n } from 'vue-i18n'
-import ApiClient, { Credential, RegisterData } from '../modules/api';
+import ApiClient, { Credential, RegisterData, clearNetworkCredentials, saveNetworkCredentials } from '../modules/api';
 
 const { t } = useI18n()
 
@@ -43,9 +43,12 @@ const loadCaptcha = async () => {
 const onSubmit = async () => {
     // Add your login logic here
     saveApiHost(apiHost.value);
-    const credential: Credential = { username: username.value, password: password.value, };
+    clearNetworkCredentials();
+    const rawPassword = password.value;
+    const credential: Credential = { username: username.value, password: rawPassword, };
     let ret = await api.value?.login(credential);
     if (ret.success) {
+        saveNetworkCredentials(username.value, rawPassword);
         localStorage.setItem('apiHost', btoa(apiHost.value));
         router.push({
             name: 'dashboard',
@@ -115,6 +118,7 @@ watch(() => props.isRegistering, (val) => {
 
 const onSsoLogin = () => {
     saveApiHost(apiHost.value);
+    clearNetworkCredentials();
     localStorage.setItem('apiHost', btoa(apiHost.value));
     window.location.href = api.value.oidcLoginUrl();
 };
