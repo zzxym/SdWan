@@ -425,8 +425,8 @@ impl SessionRpcService {
             None => (0, 0),
         };
         let wants_to_run_network = !req.running_network_instances.is_empty();
-        let network_run_disallowed =
-            wants_to_run_network && is_network_run_disallowed(&storage, user_id, machine_id, client_limit);
+        let network_run_disallowed = wants_to_run_network
+            && is_network_run_disallowed(&storage, user_id, machine_id, client_limit);
 
         if data.req.replace(req.clone()).is_none() {
             assert!(data.storage_token.is_none());
