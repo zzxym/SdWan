@@ -25,25 +25,41 @@ const api = computed<ApiClient | undefined>(() => {
 const dialog = useDialog();
 
 const userMenu = ref();
-const userMenuItems = ref([
-    {
-        label: t('web.main.change_password'),
-        icon: 'pi pi-key',
-        command: () => {
-            console.log('File');
-            let ret = dialog.open(ChangePassword, {
-                props: {
-                    modal: true,
-                },
-                data: {
-                    api: api.value,
-                }
-            });
 
-            console.log("return", ret)
+// 当前用户是否管理员，仅管理员显示「进入管理后台」入口。
+const isAdmin = ref(false);
+
+const userMenuItems = computed(() => {
+    const items: Array<any> = [
+        {
+            label: t('web.main.change_password'),
+            icon: 'pi pi-key',
+            command: () => {
+                let ret = dialog.open(ChangePassword, {
+                    props: {
+                        modal: true,
+                    },
+                    data: {
+                        api: api.value,
+                    }
+                });
+
+                console.log("return", ret)
+            },
         },
-    },
-    {
+    ];
+
+    if (isAdmin.value) {
+        items.push({
+            label: t('web.main.admin_console'),
+            icon: 'pi pi-cog',
+            command: () => {
+                router.push({ name: 'xlxxadmin' });
+            },
+        });
+    }
+
+    items.push({
         label: t('web.main.logout'),
         icon: 'pi pi-sign-out',
         command: async () => {
@@ -54,8 +70,10 @@ const userMenuItems = ref([
             }
             router.push({ name: 'login' });
         },
-    },
-])
+    });
+
+    return items;
+});
 
 const forceShowSideBar = ref(false)
 const sidebarRef = ref<HTMLElement>()
@@ -92,6 +110,13 @@ onMounted(async () => {
     // 等待 DOM 渲染完成后添加事件监听器
     await nextTick();
     document.addEventListener('click', handleClickOutside);
+    // 查询当前用户是否管理员，控制「进入管理后台」入口可见性
+    try {
+        const me = await api.value?.get_current_user();
+        isAdmin.value = me?.is_admin ?? false;
+    } catch (e) {
+        isAdmin.value = false;
+    }
 });
 
 onUnmounted(() => {

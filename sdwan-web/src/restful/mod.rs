@@ -65,6 +65,13 @@ struct GetSummaryJsonResp {
     device_count: u32,
 }
 
+/// 当前登录用户的基本信息，供前端按权限控制界面元素。
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct CurrentUserJsonResp {
+    username: String,
+    is_admin: bool,
+}
+
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct GenerateConfigRequest {
     config: NetworkConfig,
@@ -157,6 +164,30 @@ impl RestfulServer {
 
         Ok(GetSummaryJsonResp {
             device_count: machines.len() as u32,
+        }
+        .into())
+    }
+
+    /// 返回当前登录用户的基本信息（用户名、是否管理员）。
+    async fn handle_get_current_user(
+        auth_session: AuthSession,
+    ) -> Result<Json<CurrentUserJsonResp>, HttpHandleError> {
+        let Some(user) = auth_session.user else {
+            return Err((StatusCode::UNAUTHORIZED, other_error("No such user").into()));
+        };
+        let is_admin = auth_session
+            .backend
+            .is_admin(user.id())
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    other_error(format!("Failed to check admin permission: {:?}", e)).into(),
+                )
+            })?;
+        Ok(CurrentUserJsonResp {
+            username: user.db_user.username.clone(),
+            is_admin,
         }
         .into())
     }
@@ -274,6 +305,7 @@ impl RestfulServer {
 
         let mut app = Router::new()
             .route("/api/v1/summary", get(Self::handle_get_summary))
+            .route("/api/v1/user/me", get(Self::handle_get_current_user))
             .route("/api/v1/sessions", get(Self::handle_list_all_sessions))
             .merge(NetworkApi::build_route())
             .merge(admin::AdminApi::build_route())

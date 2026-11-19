@@ -297,6 +297,8 @@ web:
     logout: 退出登录
     language: 语言
     change_password: 修改密码
+    admin_console: 进入管理后台
+    back_to_console: 返回控制台
 
   device:
     list: 设备列表

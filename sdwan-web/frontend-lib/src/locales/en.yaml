@@ -297,6 +297,8 @@ web:
     logout: Logout
     language: Language
     change_password: Change Password
+    admin_console: Admin Console
+    back_to_console: Back to Console
 
   device:
     list: Device List

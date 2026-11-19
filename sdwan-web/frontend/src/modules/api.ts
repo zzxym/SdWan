@@ -62,6 +62,12 @@ export interface ListAdminUsersResponse {
     users: AdminUserItem[];
 }
 
+/** 当前登录用户的基本信息。 */
+export interface CurrentUser {
+    username: string;
+    is_admin: boolean;
+}
+
 export interface ListNetworkInstanceIdResponse {
     running_inst_ids: Array<Utils.UUID>,
     disabled_inst_ids: Array<Utils.UUID>,
@@ -205,6 +211,12 @@ export class ApiClient {
 
     public async get_summary(): Promise<Summary> {
         const response = await this.client.get<any, Summary>('/summary');
+        return response;
+    }
+
+    /** 获取当前登录用户的基本信息（用户名、是否管理员）。 */
+    public async get_current_user(): Promise<CurrentUser> {
+        const response = await this.client.get<any, CurrentUser>('/user/me');
         return response;
     }
 

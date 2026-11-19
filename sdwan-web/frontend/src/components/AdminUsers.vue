@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useToast } from 'primevue/usetoast';
-import { Button, Column, DataTable, Dialog, InputText } from 'primevue';
+import { Button, Column, DataTable, Dialog, InputText, TieredMenu } from 'primevue';
 import { Md5 } from 'ts-md5';
-import { Utils } from 'sdwan-frontend-lib';
+import { I18nUtils, Utils } from 'sdwan-frontend-lib';
+import Icon from '../assets/sdwan.png';
 import ApiClient, { type AdminUserItem } from '../modules/api';
 
 const { t } = useI18n();
 const toast = useToast();
+const router = useRouter();
 
 /**
  * 运营管理页：查看与管控所有用户。
@@ -38,6 +41,35 @@ function resolveApiHost(): string {
 const api = new ApiClient(resolveApiHost(), () => {
     toast.add({ severity: 'error', summary: t('error'), detail: t('web.admin.login_required'), life: 3000 });
 });
+
+// 页头用户菜单：返回控制台 / 退出登录
+const userMenu = ref();
+const userMenuItems = computed(() => [
+    {
+        label: t('web.main.back_to_console'),
+        icon: 'pi pi-arrow-left',
+        command: () => {
+            const apiHost = localStorage.getItem('apiHost');
+            if (apiHost) {
+                router.push({ name: 'dashboard', params: { apiHost } });
+            } else {
+                router.push({ name: 'login' });
+            }
+        },
+    },
+    {
+        label: t('web.main.logout'),
+        icon: 'pi pi-sign-out',
+        command: async () => {
+            try {
+                await api.logout();
+            } catch (e) {
+                console.error('logout failed', e);
+            }
+            router.push({ name: 'login' });
+        },
+    },
+]);
 
 const loading = ref(false);
 const users = ref<AdminUserItem[]>([]);
@@ -344,6 +376,21 @@ onMounted(loadUsers);
 </script>
 
 <template>
+    <!-- 页头：与控制台一致的 logo + 语言切换 + 用户菜单 -->
+    <nav class="admin-top-nav">
+        <div class="admin-top-nav-inner">
+            <a href="https://sdwan.top" class="flex items-center">
+                <img :src="Icon" class="h-9 me-3" alt="Sdwan Logo" />
+                <span class="self-center text-xl font-semibold whitespace-nowrap">Sdwan</span>
+            </a>
+            <div class="flex items-center gap-3">
+                <Button icon="pi pi-language" @click="I18nUtils.toggleLanguage" rounded severity="contrast" />
+                <Button type="button" @click="userMenu.toggle($event)" aria-haspopup="true"
+                    aria-controls="admin-user-menu" icon="pi pi-user" raised rounded />
+                <TieredMenu ref="userMenu" id="admin-user-menu" :model="userMenuItems" popup />
+            </div>
+        </div>
+    </nav>
     <div class="admin-page">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-xl font-semibold">{{ t('web.admin.title') }}</h2>
@@ -531,5 +578,21 @@ onMounted(loadUsers);
     background: transparent;
     border: 1px solid var(--p-surface-300);
     border-radius: 0.5rem;
+}
+
+.admin-top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    width: 100%;
+    background: var(--p-surface-0, #fff);
+    border-bottom: 1px solid var(--p-surface-200, #e5e7eb);
+}
+
+.admin-top-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1.25rem;
 }
 </style>
