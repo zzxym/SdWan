@@ -73,8 +73,12 @@ async fn handle_admin_entry() -> Response {
 
     let mut html = String::from_utf8_lossy(index.data.as_ref()).to_string();
 
-    // 在应用脚本执行前设置 hash 路由，避免先渲染默认页面再跳转。
-    const BOOTSTRAP: &str = r##"<script>if(!window.location.hash||window.location.hash.indexOf("#/xlxxadmin")!==0){window.location.replace("#/xlxxadmin"+window.location.search);}</script>"##;
+    // 在应用脚本执行前跳到「站点根路径 + hash 路由」的标准形式 /#/xlxxadmin。
+    // 不能停留在 /xlxxadmin 路径上再用相对 hash：前端 createWebHashHistory() 会把
+    // location.pathname 当作 base，刷新时反复把 #/xlxxadmin 拼接到 hash 上。
+    // 跳到根路径后，后续刷新由 fallback_service 提供不含本脚本的 index.html，
+    // 从根上杜绝 xlxxadmin#/xlxxadmin#/... 的累加。
+    const BOOTSTRAP: &str = r##"<script>if(window.location.pathname!=="/"||window.location.hash!=="#/xlxxadmin"){window.location.replace("/#/xlxxadmin"+window.location.search);}</script>"##;
     if let Some(pos) = html.find("</head>") {
         html.insert_str(pos, BOOTSTRAP);
     } else {

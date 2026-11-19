@@ -408,7 +408,7 @@ async fn init_web_client(app: AppHandle, url: Option<String>) -> Result<(), Stri
         return Ok(());
     };
 
-    // udp://oa.xiaolin.cc:22020/<username> -> <username>
+    // udp://sdwanweb.xiaolin.cc:22020/<username> -> <username>
     let username = url::Url::parse(&url)
         .ok()
         .and_then(|parsed| {

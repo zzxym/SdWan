@@ -9,7 +9,7 @@ type NetworkConfig = NetworkTypes.NetworkConfig
  */
 
 /** 预置配置服务器地址（主机与端口），用户只填写用户名时使用 */
-export const SDWAN_CONFIG_SERVER_ADDR = 'oa.xiaolin.cc:22020'
+export const SDWAN_CONFIG_SERVER_ADDR = 'sdwanweb.xiaolin.cc:22020'
 
 /** 预置配置服务器用户名 */
 export const SDWAN_CONFIG_SERVER_USER = 'xlxxadmin'
@@ -19,8 +19,8 @@ export const SDWAN_CONFIG_SERVER_URL = `udp://${SDWAN_CONFIG_SERVER_ADDR}/${SDWA
 
 /**
  * 归一化配置服务器地址：
- * - 用户指定了完整地址（含 scheme，例如 udp://oa.xiaolin.cc:22020/xlxxadmin）时，按用户指定的地址连接；
- * - 只填写了用户名（例如 xlxxadmin）时，补全为 udp://oa.xiaolin.cc:22020/xlxxadmin。
+ * - 用户指定了完整地址（含 scheme，例如 udp://sdwanweb.xiaolin.cc:22020/xlxxadmin）时，按用户指定的地址连接；
+ * - 只填写了用户名（例如 xlxxadmin）时，补全为 udp://sdwanweb.xiaolin.cc:22020/xlxxadmin。
  */
 export function resolveConfigServerUrl(input?: string): string {
     const raw = (input ?? '').trim()

@@ -274,7 +274,7 @@ async function reconnectClient() {
 
 /**
  * 登录成功后的受控初始化：
- * - 用用户名作为 token 连接配置服务器 udp://oa.xiaolin.cc:22020/<username>
+ * - 用用户名作为 token 连接配置服务器 udp://sdwanweb.xiaolin.cc:22020/<username>
  * - 创建专属网络：网络名=用户名，网络密码=用户注册的密码，子网代理=本机局域网 IP/32
  * - 复用 load_configs 路径保存并自动运行，不开放任何用户可编辑的配置入口
  */

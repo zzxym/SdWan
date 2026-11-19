@@ -12,11 +12,21 @@ const toast = useToast();
 /**
  * 运营管理页：查看与管控所有用户。
  *
- * 入口为 `http://<host>:<port>/xlxxadmin`（后端会注入脚本跳转到 `#/xlxxadmin`）。
+ * 入口为 `http://<host>:<port>/xlxxadmin`（后端会注入脚本跳转到 `/#/xlxxadmin`）。
  * 该页面独立于主控制台布局，因此自行构造 ApiClient：
- * 优先使用后端下发的 api_host，否则回退到当前站点根路径。
+ * 1) 优先使用用户在登录页选择并保存的 apiHost（localStorage），避免 apiMeta 配错时全部接口打到静态站；
+ * 2) 其次使用后端下发的 api_host；
+ * 3) 最后回退到当前站点根路径。
  */
 function resolveApiHost(): string {
+    try {
+        const saved = JSON.parse(localStorage.getItem('apiHosts') || '[]');
+        if (Array.isArray(saved) && saved.length > 0 && saved[0]?.value) {
+            return String(saved[0].value).replace(/\/+$/, '');
+        }
+    } catch (_) {
+        // ignore malformed localStorage
+    }
     const meta = (window as any).apiMeta;
     if (meta?.api_host) {
         return String(meta.api_host).replace(/\/+$/, '');
@@ -57,6 +67,43 @@ async function confirmExpire() {
         await api.admin_set_expire(username, expire_at);
         toast.add({ severity: 'success', summary: t('web.admin.save_success'), life: 2000 });
         expireDialogVisible.value = false;
+        await loadUsers();
+    } catch (e: any) {
+        toast.add({
+            severity: 'error',
+            summary: t('error'),
+            detail: e?.response?.data?.message ?? String(e),
+            life: 3000,
+        });
+    }
+}
+
+// ---------------------------------------------------------------- 授权客户端数设置
+const clientLimitDialogVisible = ref(false);
+const clientLimitTarget = ref<AdminUserItem | null>(null);
+/** 授权客户端数，0 表示不限制。 */
+const clientLimitValue = ref<string>('0');
+
+function openClientLimitDialog(user: AdminUserItem) {
+    clientLimitTarget.value = user;
+    clientLimitValue.value = String(user.client_limit ?? 0);
+    clientLimitDialogVisible.value = true;
+}
+
+async function confirmClientLimit() {
+    if (!clientLimitTarget.value) {
+        return;
+    }
+    const limit = Number(clientLimitValue.value);
+    if (!Number.isInteger(limit) || limit < 0) {
+        toast.add({ severity: 'error', summary: t('error'), detail: t('web.admin.client_limit_hint'), life: 3000 });
+        return;
+    }
+    const username = clientLimitTarget.value.username;
+    try {
+        await api.admin_set_client_limit(username, limit);
+        toast.add({ severity: 'success', summary: t('web.admin.save_success'), life: 2000 });
+        clientLimitDialogVisible.value = false;
         await loadUsers();
     } catch (e: any) {
         toast.add({
@@ -342,6 +389,8 @@ onMounted(loadUsers);
                             @click="toggleEnabled(data)" />
                         <Button :label="t('web.admin.set_expire')" size="small" severity="secondary" outlined
                             @click="openExpireDialog(data)" />
+                        <Button :label="t('web.admin.set_client_limit')" size="small" severity="secondary" outlined
+                            @click="openClientLimitDialog(data)" />
                         <Button :label="t('web.admin.reset_password')" size="small" severity="secondary" outlined
                             @click="openPasswordDialog(data)" />
                         <Button :label="t('web.admin.manage_networks')" size="small" outlined
@@ -365,6 +414,22 @@ onMounted(loadUsers);
                 <Button :label="t('web.common.cancel')" severity="secondary" text
                     @click="expireDialogVisible = false" />
                 <Button :label="t('web.common.save')" @click="confirmExpire" />
+            </template>
+        </Dialog>
+
+        <!-- 授权客户端数 -->
+        <Dialog v-model:visible="clientLimitDialogVisible" :header="t('web.admin.set_client_limit')" modal>
+            <div class="flex flex-col gap-3">
+                <p class="text-sm text-surface-500">{{ t('web.admin.client_limit_hint') }}</p>
+                <div class="flex items-center gap-3">
+                    <label for="client-limit" class="text-sm">{{ t('web.admin.client_limit') }}</label>
+                    <InputText id="client-limit" v-model="clientLimitValue" type="number" min="0" class="w-32" />
+                </div>
+            </div>
+            <template #footer>
+                <Button :label="t('web.common.cancel')" severity="secondary" text
+                    @click="clientLimitDialogVisible = false" />
+                <Button :label="t('web.common.save')" @click="confirmClientLimit" />
             </template>
         </Dialog>
 

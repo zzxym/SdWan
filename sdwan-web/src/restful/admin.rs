@@ -75,6 +75,12 @@ pub struct SetExpireReq {
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct SetClientLimitReq {
+    /// 客户端数量上限。0 表示不限制，必须为非负数。
+    pub client_limit: i32,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct ResetPasswordReq {
     /// 新密码明文，服务端按既有约定（MD5 + argon2）哈希后存储。
     pub new_password: String,
@@ -306,6 +312,47 @@ impl AdminApi {
         Ok(Void::default().into())
     }
 
+    /// 设置账号的授权客户端数量上限。0 表示不限制。
+    async fn handle_set_client_limit(
+        auth_session: AuthSession,
+        Path(username): Path<String>,
+        Json(payload): Json<SetClientLimitReq>,
+    ) -> Result<Json<Void>, HttpHandleError> {
+        Self::require_admin(&auth_session).await?;
+
+        if payload.client_limit < 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                other_error("client_limit must be non-negative".to_string()).into(),
+            ));
+        }
+
+        use crate::db::entity::users;
+
+        let backend = auth_session.backend.clone();
+        let target_id = Self::find_user_id(&backend, &username).await?;
+
+        let mut user = users::Entity::find_by_id(target_id)
+            .one(backend.db().orm_db())
+            .await
+            .map_err(convert_db_error)?
+            .ok_or_else(|| {
+                (
+                    StatusCode::NOT_FOUND,
+                    other_error(format!("User '{}' not found", username)).into(),
+                )
+            })?
+            .into_active_model();
+        user.client_limit = Set(payload.client_limit);
+
+        users::Entity::update(user)
+            .exec(backend.db().orm_db())
+            .await
+            .map_err(convert_db_error)?;
+
+        Ok(Void::default().into())
+    }
+
     /// 重置其他用户的密码。
     async fn handle_reset_password(
         auth_session: AuthSession,
@@ -523,6 +570,10 @@ impl AdminApi {
             .route(
                 "/api/v1/admin/users/:username/expire",
                 post(Self::handle_set_expire),
+            )
+            .route(
+                "/api/v1/admin/users/:username/client-limit",
+                post(Self::handle_set_client_limit),
             )
             .route(
                 "/api/v1/admin/users/:username/password",

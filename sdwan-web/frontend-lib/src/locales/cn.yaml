@@ -395,6 +395,9 @@ web:
     enable: 启用账号
     disable: 禁用账号
     set_expire: 设置期限
+    set_client_limit: 设置授权数
+    client_limit: 授权客户端数
+    client_limit_hint: 填 0 表示不限制；填 N 表示该用户最多可同时在线 N 台客户端。
     reset_password: 重置密码
     manage_networks: 管理网络
     kick_client: 踢出客户端

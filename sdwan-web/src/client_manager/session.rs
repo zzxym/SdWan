@@ -475,15 +475,13 @@ impl SessionRpcService {
         let _ = data.notifier.send(req);
 
         // 下发用户的授权与使用期限信息，供客户端状态面板展示（在线数/总授权数、使用期限）。
-        let (client_limit, online_client_count, expire_at) =
-            match storage.db().get_user_by_id(user_id).await {
-                Ok(Some(user)) => (
-                    user.client_limit,
-                    storage.list_user_clients(user_id).len() as i32,
-                    user.expire_at.unwrap_or(0),
-                ),
-                _ => (0, 0, 0),
-            };
+        // 在线数来自 storage 中真实登记的客户端，即使读取用户详情失败也应返回真实在线数，
+        // 避免客户端面板误显示为 0。
+        let online_client_count = storage.list_user_clients(user_id).len() as i32;
+        let (client_limit, expire_at) = match storage.db().get_user_by_id(user_id).await {
+            Ok(Some(user)) => (user.client_limit, user.expire_at.unwrap_or(0)),
+            _ => (0, 0),
+        };
 
         Ok(HeartbeatResponse {
             client_limit,

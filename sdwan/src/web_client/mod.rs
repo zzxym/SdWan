@@ -47,16 +47,16 @@ pub mod security;
 pub mod session;
 
 /// 预置配置服务器地址（主机与端口），用户只填写用户名时使用。
-pub const DEFAULT_CONFIG_SERVER_ADDR: &str = "oa.xiaolin.cc:22020";
+pub const DEFAULT_CONFIG_SERVER_ADDR: &str = "sdwanweb.xiaolin.cc:22020";
 
 /// 预置配置服务器用户名，配置服务器地址为空时使用。
 pub const DEFAULT_CONFIG_SERVER_USER: &str = "xlxxadmin";
 
 /// 解析配置服务器地址。
 ///
-/// - 地址为空时，使用预置的 `udp://oa.xiaolin.cc:22020/xlxxadmin`；
-/// - 用户指定了完整地址（含 scheme，例如 `udp://oa.xiaolin.cc:22020/xlxxadmin`）时，按用户指定的地址连接；
-/// - 只填写了用户名（例如 `xlxxadmin`）时，补全为 `udp://oa.xiaolin.cc:22020/xlxxadmin`。
+/// - 地址为空时，使用预置的 `udp://sdwanweb.xiaolin.cc:22020/xlxxadmin`；
+/// - 用户指定了完整地址（含 scheme，例如 `udp://sdwanweb.xiaolin.cc:22020/xlxxadmin`）时，按用户指定的地址连接；
+/// - 只填写了用户名（例如 `xlxxadmin`）时，补全为 `udp://sdwanweb.xiaolin.cc:22020/xlxxadmin`。
 fn resolve_config_server_url(config_server_url_s: &str) -> Result<Url> {
     let raw = config_server_url_s.trim();
     if raw.is_empty() {
@@ -376,9 +376,9 @@ mod tests {
 
     #[test]
     fn resolve_config_server_url_keeps_user_specified_address() {
-        let url = resolve_config_server_url("udp://oa.xiaolin.cc:22020/xlxxadmin").unwrap();
+        let url = resolve_config_server_url("udp://sdwanweb.xiaolin.cc:22020/xlxxadmin").unwrap();
         assert_eq!(url.scheme(), "udp");
-        assert_eq!(url.host_str(), Some("oa.xiaolin.cc"));
+        assert_eq!(url.host_str(), Some("sdwanweb.xiaolin.cc"));
         assert_eq!(url.port(), Some(22020));
         assert_eq!(url.path(), "/xlxxadmin");
     }
@@ -386,21 +386,21 @@ mod tests {
     #[test]
     fn resolve_config_server_url_expands_bare_username() {
         let url = resolve_config_server_url("xlxxadmin").unwrap();
-        assert_eq!(url.as_str(), "udp://oa.xiaolin.cc:22020/xlxxadmin");
+        assert_eq!(url.as_str(), "udp://sdwanweb.xiaolin.cc:22020/xlxxadmin");
     }
 
     #[test]
     fn resolve_config_server_url_expands_username_with_spaces() {
         let url = resolve_config_server_url("  my user  ").unwrap();
-        assert_eq!(url.as_str(), "udp://oa.xiaolin.cc:22020/my%20user");
+        assert_eq!(url.as_str(), "udp://sdwanweb.xiaolin.cc:22020/my%20user");
     }
 
     #[test]
     fn resolve_config_server_url_falls_back_to_preset_when_empty() {
         let url = resolve_config_server_url("").unwrap();
-        assert_eq!(url.as_str(), "udp://oa.xiaolin.cc:22020/xlxxadmin");
+        assert_eq!(url.as_str(), "udp://sdwanweb.xiaolin.cc:22020/xlxxadmin");
         let url = resolve_config_server_url("   ").unwrap();
-        assert_eq!(url.as_str(), "udp://oa.xiaolin.cc:22020/xlxxadmin");
+        assert_eq!(url.as_str(), "udp://sdwanweb.xiaolin.cc:22020/xlxxadmin");
     }
 
     #[test]

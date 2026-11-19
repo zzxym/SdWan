@@ -54,6 +54,8 @@ export interface AdminUserItem {
     expire_at: number | null;
     expired: boolean;
     device_count: number;
+    /** 授权客户端数量上限，0 表示不限制。 */
+    client_limit: number;
 }
 
 export interface ListAdminUsersResponse {
@@ -227,6 +229,11 @@ export class ApiClient {
     /** 设置使用期限（Unix 秒），传 null 表示永久有效。 */
     public async admin_set_expire(username: string, expire_at: number | null) {
         await this.client.post(`/admin/users/${encodeURIComponent(username)}/expire`, { expire_at });
+    }
+
+    /** 设置授权客户端数量上限，0 表示不限制。 */
+    public async admin_set_client_limit(username: string, client_limit: number) {
+        await this.client.post(`/admin/users/${encodeURIComponent(username)}/client-limit`, { client_limit });
     }
 
     /** 重置指定用户的密码。 */

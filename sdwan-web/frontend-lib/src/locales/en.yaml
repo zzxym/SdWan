@@ -395,6 +395,9 @@ web:
     enable: Enable account
     disable: Disable account
     set_expire: Set expiration
+    set_client_limit: Set client limit
+    client_limit: Authorized clients
+    client_limit_hint: Enter 0 for no limit; N means the user can have at most N clients online at once.
     reset_password: Reset password
     manage_networks: Manage networks
     kick_client: Kick client
