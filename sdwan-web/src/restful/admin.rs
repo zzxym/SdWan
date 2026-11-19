@@ -22,7 +22,7 @@ use sdwan::proto::common::Void;
 use sdwan::rpc_service::remote_client::RemoteClientManager;
 use sea_orm::{
     ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter, QueryOrder, QuerySelect as _,
-    RelationTrait, Set,
+    RelationTrait, Set, TransactionTrait as _,
 };
 
 use crate::db::UserIdInDb;
@@ -84,6 +84,12 @@ pub struct SetClientLimitReq {
 pub struct ResetPasswordReq {
     /// 新密码明文，服务端按既有约定（MD5 + argon2）哈希后存储。
     pub new_password: String,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct DeleteUserReq {
+    /// 当前管理员的密码（前端提交 MD5 后的值），用于确认删除操作。
+    pub admin_password: String,
 }
 
 pub struct AdminApi;
@@ -384,6 +390,82 @@ impl AdminApi {
         Ok(Void::default().into())
     }
 
+    /// 删除用户账号。必须校验当前管理员密码，避免误删。
+    async fn handle_delete_user(
+        auth_session: AuthSession,
+        State(client_mgr): AppState,
+        Path(username): Path<String>,
+        Json(payload): Json<DeleteUserReq>,
+    ) -> Result<Json<Void>, HttpHandleError> {
+        let admin_id = Self::require_admin(&auth_session).await?;
+
+        // 校验当前管理员自己的密码：前端按既有约定提交 MD5 后的值。
+        let Some(admin_user) = auth_session.user.as_ref() else {
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                other_error("Not logged in".to_string()).into(),
+            ));
+        };
+        let stored_hash = admin_user.db_user.password.clone();
+        let submitted = payload.admin_password.clone();
+        let password_ok = tokio::task::spawn_blocking(move || {
+            password_auth::verify_password(&submitted, &stored_hash).is_ok()
+        })
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                other_error(format!("Failed to verify password: {:?}", e)).into(),
+            )
+        })?;
+        if !password_ok {
+            return Err((
+                StatusCode::FORBIDDEN,
+                other_error("Incorrect administrator password".to_string()).into(),
+            ));
+        }
+
+        let backend = auth_session.backend.clone();
+        let target_id = Self::find_user_id(&backend, &username).await?;
+
+        // 不允许删除当前登录的管理员账号，否则会失去管理入口。
+        if target_id == admin_id {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                other_error("Cannot delete the account you are logged in with".to_string()).into(),
+            ));
+        }
+
+        // 先断开该用户的在线客户端，避免账号删除后旧会话仍能运行网络。
+        for (machine_id, _) in client_mgr.list_machines_with_ids(target_id).await {
+            client_mgr
+                .disconnect_session_by_machine_id(target_id, &machine_id)
+                .await;
+        }
+
+        use crate::db::entity::{user_running_network_configs as urnc, users, users_groups};
+
+        let db = backend.db().orm_db();
+        let txn = db.begin().await.map_err(convert_db_error)?;
+        urnc::Entity::delete_many()
+            .filter(urnc::Column::UserId.eq(target_id))
+            .exec(&txn)
+            .await
+            .map_err(convert_db_error)?;
+        users_groups::Entity::delete_many()
+            .filter(users_groups::Column::UserId.eq(target_id))
+            .exec(&txn)
+            .await
+            .map_err(convert_db_error)?;
+        users::Entity::delete_by_id(target_id)
+            .exec(&txn)
+            .await
+            .map_err(convert_db_error)?;
+        txn.commit().await.map_err(convert_db_error)?;
+
+        Ok(Void::default().into())
+    }
+
     /// 列出某个用户的机器（客户端）。
     async fn handle_list_user_machines(
         auth_session: AuthSession,
@@ -569,6 +651,10 @@ impl AdminApi {
     pub fn build_route() -> Router<AppStateInner> {
         Router::new()
             .route("/api/v1/admin/users", get(Self::handle_list_users))
+            .route(
+                "/api/v1/admin/users/:username",
+                delete(Self::handle_delete_user),
+            )
             .route(
                 "/api/v1/admin/users/:username/role",
                 post(Self::handle_set_role),

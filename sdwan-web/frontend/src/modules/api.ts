@@ -303,6 +303,13 @@ export class ApiClient {
         await this.client.post(`/admin/users/${encodeURIComponent(username)}/password`, { new_password });
     }
 
+    /** 删除指定用户，需提供当前管理员密码（MD5 后的值）校验。 */
+    public async admin_delete_user(username: string, admin_password: string) {
+        await this.client.delete(`/admin/users/${encodeURIComponent(username)}`, {
+            data: { admin_password },
+        });
+    }
+
     /** 列出指定用户的机器（客户端）。 */
     public async admin_list_user_machines(username: string): Promise<Array<any>> {
         const response = await this.client.get<any, { machines: Array<any> }>(

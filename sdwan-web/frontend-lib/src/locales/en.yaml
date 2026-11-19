@@ -398,8 +398,12 @@ web:
     demote: Remove admin
     enable: Enable account
     disable: Disable account
-    set_expire: Set expiration
-    set_client_limit: Set network device limit
+    set_expire: Set validity
+    set_client_limit: Set credits
+    delete_account: Delete account
+    delete_account_hint: This permanently deletes the user and its data. Enter your current administrator password to confirm.
+    admin_password: Administrator password
+    confirm_delete: Delete
     client_limit: Authorized network devices
     client_limit_hint: Enter 0 for no limit; N means at most N devices of this user can run networks at once. Login and online device count are not limited.
     reset_password: Reset password

@@ -90,7 +90,8 @@ impl Backend {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs() as i64;
-        let expire_at = Some(now + 30 * 24 * 3600);
+        // 新注册用户默认 7 天使用期限。
+        let expire_at = Some(now + 7 * 24 * 3600);
         self.db
             .create_user_and_join_users_group(
                 &new_user.credentials.username,

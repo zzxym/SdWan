@@ -361,6 +361,42 @@ async function toggleEnabled(user: AdminUserItem) {
     }
 }
 
+// ---------------------------------------------------------------- 删除账户
+const deleteDialogVisible = ref(false);
+const deleteTarget = ref<AdminUserItem | null>(null);
+const adminPassword = ref('');
+const deleting = ref(false);
+
+function openDeleteDialog(user: AdminUserItem) {
+    deleteTarget.value = user;
+    adminPassword.value = '';
+    deleteDialogVisible.value = true;
+}
+
+async function confirmDeleteUser() {
+    if (!deleteTarget.value || !adminPassword.value) {
+        return;
+    }
+    const username = deleteTarget.value.username;
+    deleting.value = true;
+    try {
+        // 服务端要求校验当前管理员密码，按既有约定提交 MD5 后的值。
+        await api.admin_delete_user(username, Md5.hashStr(adminPassword.value));
+        toast.add({ severity: 'success', summary: t('web.admin.delete_success'), life: 2000 });
+        deleteDialogVisible.value = false;
+        await loadUsers();
+    } catch (e: any) {
+        toast.add({
+            severity: 'error',
+            summary: t('error'),
+            detail: e?.response?.data?.message ?? String(e),
+            life: 3000,
+        });
+    } finally {
+        deleting.value = false;
+    }
+}
+
 function formatExpire(expire_at: number | null): string {
     if (!expire_at) {
         return t('web.admin.never_expire');
@@ -438,6 +474,8 @@ onMounted(loadUsers);
                         <Button :label="data.enabled ? t('web.admin.disable') : t('web.admin.enable')"
                             size="small" :severity="data.enabled ? 'danger' : 'success'" outlined
                             @click="toggleEnabled(data)" />
+                        <Button :label="t('web.admin.delete_account')" size="small" severity="danger" outlined
+                            @click="openDeleteDialog(data)" />
                         <Button :label="t('web.admin.set_expire')" size="small" severity="secondary" outlined
                             @click="openExpireDialog(data)" />
                         <Button :label="t('web.admin.set_client_limit')" size="small" severity="secondary" outlined
@@ -494,6 +532,21 @@ onMounted(loadUsers);
                 <Button :label="t('web.common.cancel')" severity="secondary" text
                     @click="passwordDialogVisible = false" />
                 <Button :label="t('web.common.save')" @click="confirmResetPassword" />
+            </template>
+        </Dialog>
+
+        <!-- 删除账户 -->
+        <Dialog v-model:visible="deleteDialogVisible" :header="t('web.admin.delete_account')" modal>
+            <div class="flex flex-col gap-3">
+                <p class="text-sm text-surface-500">{{ t('web.admin.delete_account_hint') }}</p>
+                <label for="admin-password" class="text-sm">{{ t('web.admin.admin_password') }}</label>
+                <InputText id="admin-password" v-model="adminPassword" type="password" class="w-full" />
+            </div>
+            <template #footer>
+                <Button :label="t('web.common.cancel')" severity="secondary" text
+                    @click="deleteDialogVisible = false" />
+                <Button :label="t('web.admin.confirm_delete')" severity="danger" :loading="deleting"
+                    @click="confirmDeleteUser" />
             </template>
         </Dialog>
 

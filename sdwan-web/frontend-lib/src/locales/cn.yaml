@@ -398,8 +398,12 @@ web:
     demote: 取消管理员
     enable: 启用账号
     disable: 禁用账号
-    set_expire: 设置期限
-    set_client_limit: 设置运行网络授权数
+    set_expire: 使用期限
+    set_client_limit: 授权点数
+    delete_account: 删除账户
+    delete_account_hint: 删除后该用户及其数据无法恢复，请输入当前管理员密码确认。
+    admin_password: 管理员密码
+    confirm_delete: 确认删除
     client_limit: 可运行网络设备数
     client_limit_hint: 填 0 表示不限制；填 N 表示该用户最多可有 N 台设备同时运行网络。登录和在线设备数不受限制。
     reset_password: 重置密码
