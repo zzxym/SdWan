@@ -1364,7 +1364,7 @@ async fn run_main(cli: Cli) -> anyhow::Result<()> {
                 "Web client started successfully...",
             );
 
-            log::info!("Official config website: https://sdwanlogin.xiaolin.cc:81");
+            log::info!("Official config website: https://sdwanweb.xiaolin.cc:81");
         })?;
 
         Some(wc)

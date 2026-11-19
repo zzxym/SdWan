@@ -8,7 +8,7 @@ import { I18nUtils } from 'sdwan-frontend-lib'
  * 登录接口只用于校验账号密码：session cookie 是 HttpOnly + SameSite=Lax，
  * GUI 不依赖它维持会话，而是用用户名作为配置服务器的 token 建立 UDP 连接。
  */
-export const AUTH_API_BASE = 'https://sdwanlogin.xiaolin.cc:81'
+export const AUTH_API_BASE = 'https://sdwanweb.xiaolin.cc:81'
 
 export interface CaptchaInfo {
   captcha_id: string
