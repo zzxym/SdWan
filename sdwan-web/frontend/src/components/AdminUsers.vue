@@ -564,6 +564,11 @@ onMounted(loadUsers);
                     </select>
                 </div>
 
+                <div v-if="machineOptions.length === 1" class="flex flex-col gap-1">
+                    <span class="text-sm text-surface-500">{{ t('web.admin.machine') }}</span>
+                    <span class="text-sm">{{ machineOptions[0].label }}</span>
+                </div>
+
                 <div v-if="networkLoading" class="text-sm text-surface-500">{{ t('web.common.loading') }}</div>
 
                 <div v-else-if="networkInstances.length === 0" class="text-sm text-surface-500">
